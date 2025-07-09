@@ -41,9 +41,11 @@
                             <label for="initiatedBy" class="text-gray-700 font-medium mb-1">Initiated by</label>
                             <select id="initiatedBy" wire:model="initiatedBy" class="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none">
                                 <option value="">-- Choose a Person --</option>
-                                @foreach($employeeList as $employee)
-                                    <option value="{{ $employee['employee_id'] }}">{{ $employee['emp_name'] }} ({{ $employee['emp_id'] }} - {{ $employee['designation_title'] }})</option>
-                                @endforeach
+                                @if(!empty($employeeList))
+                                    @foreach($employeeList as $employee)
+                                        <option value="{{ $employee['employee_id'] }}">{{ $employee['emp_name'] }} ({{ $employee['emp_id'] }} - {{ $employee['designation_title'] }})</option>
+                                    @endforeach
+                                @endif
                             </select>
                             @error('initiatedBy') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                         </div>

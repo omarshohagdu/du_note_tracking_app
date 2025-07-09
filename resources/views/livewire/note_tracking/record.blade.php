@@ -1,163 +1,241 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
     <h2 class="text-2xl font-bold text-red-600 mb-6 border-l-4 border-red-600 pl-2">My Created Notes</h2>
+    @if (session()->has('message'))
+        <div class="mb-4 p-4 bg-green-100 border border-green-300 text-green-800 rounded-lg">
+            {{ session('message') }}
+        </div>
+    @endif
+    @if (session()->has('error'))
+        <div class="mb-4 p-4 bg-red-100 border border-red-300 text-red-800 rounded-lg">
+            {{ session('error') }}
+        </div>
+    @endif
+
 
     <!-- Card 1: In Transit -->
-    <div class="bg-white shadow-md rounded-2xl p-6 mb-6 border-l-4 border-orange-400">
-        <div class="flex justify-between items-start">
-            <div>
-                <h3 class="text-lg font-semibold text-gray-800">Employee Handbook Update</h3>
-                <p class="text-sm text-gray-500"><strong>Serial:</strong> NTE-2025-005</p>
-                <p class="text-sm text-gray-500">Created: June 1, 2025 | Type: Online</p>
+    @if(!empty($noteTrackingMeta))
+        @foreach($noteTrackingMeta as $note)
+            <div class="bg-white shadow-md rounded-2xl p-6 mb-6 border-l-4 border-orange-400">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">{{ $note['title'] }}</h3>
+                        <p class="text-sm text-gray-500"><strong>Serial:</strong> {{ $note['reference_no']??NULL }}</p>
+                        <p class="text-sm text-gray-500">Created: {{ $note['created_at'] }} | Type: {{ $note['type'] }}</p>
+                    </div>
+                    <span class="bg-orange-100 text-orange-600 text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
+                        {{ $note['status']??NULL }}
+                    </span>
+                </div>
+                <p class="text-gray-700 mt-4">
+                    {{ $note['description'] }}
+                </p>
+                <div class="mt-4 flex gap-4">
+                    <button type="button" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
+                            wire:click="viewMovementHistoryFun('{{ $note['id'] }}')">
+                        Movement History
+                    </button>
+                    <button type="button" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+                            wire:click="showForwardModalFun('{{ $note['id'] }}')">Forward</button>
+                    <button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">Close</button>
+
+                </div>
             </div>
-            <span class="bg-orange-100 text-orange-600 text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
-        IN TRANSIT
-      </span>
-        </div>
-        <p class="text-gray-700 mt-4">
-            Updated employee handbook with new remote work policies and procedures for 2025.
-        </p>
-        <div class="mt-4 flex gap-4">
-            <button class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
-                    onclick="viewMovementHistory('NTE-2025-005')">
-                Movement History
-            </button>
+        @endforeach
+    @endif
 
 
-            <button class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg" onclick="showForwardModal('NTE-2025-005')">Forward</button>
 
-        </div>
-    </div>
 
-    <!-- Card 2: At Destination -->
-    <div class="bg-white shadow-md rounded-2xl p-6 mb-6 border-l-4 border-green-400">
-        <div class="flex justify-between items-start">
-            <div>
-                <h3 class="text-lg font-semibold text-gray-800">IT Security Protocol</h3>
-                <p class="text-sm text-gray-500"><strong>Serial:</strong> NTE-2025-006</p>
-                <p class="text-sm text-gray-500">Created: May 28, 2025 | Type: Offline</p>
-            </div>
-            <span class="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
-        AT DESTINATION
-      </span>
-        </div>
-        <p class="text-gray-700 mt-4">
-            New IT security protocols for handling sensitive company data. Physical document created offline.
-        </p>
-        <div class="mt-4 flex gap-4">
-            <button class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg">Movement History</button>
-            <button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">Close</button>
-        </div>
-    </div>
-
-    <div id="forwardModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+    @if ($showForwardModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         <div class="bg-white w-full max-w-xl mx-auto p-6 rounded-xl shadow-lg relative">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Forward/Assign Notes</h2>
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Forward Notes ({{ $referenceNo }})</h2>
 
             <!-- Close Button -->
-            <button onclick="closeForwardModal()" class="absolute top-2 right-3 text-gray-600 hover:text-black text-xl">&times;</button>
+            <button  type="button" wire:click="closeForwardModalFun()" class="absolute top-2 right-3 text-gray-600 hover:text-black text-xl">&times;</button>
 
             <div class="mb-4">
-                <label for="selectNote" class="block font-medium text-sm text-gray-700 mb-1">Select Note to Forward</label>
-                <select id="selectNote" class="w-full border border-gray-300 rounded-lg p-2">
-                    <option value="">Choose a note...</option>
-                    <option value="NTE-2025-002">Budget Approval Request (NTE-2025-002)</option>
-                    <option value="NTE-2025-005">Employee Handbook Update (NTE-2025-005)</option>
-                    <option value="NTE-2025-006">IT Security Protocol (NTE-2025-006)</option>
-                    <option value="NTE-2025-008">Budget Allocation Request (NTE-2025-008)</option>
-                </select>
+                <label for="selectNote" class="block font-medium text-sm text-gray-700 mb-1">Note Title</label>
+                <div id="noteTitle"></div>
+                <input type="hidden" wire:model.defer="note_meta_id" id="note_meta_id">
             </div>
 
             <div class="mb-4">
-                <label for="recipient" class="block font-medium text-sm text-gray-700 mb-1">Recipient</label>
-                <select id="recipient" class="w-full border border-gray-300 rounded-lg p-2">
-                    <option value="">Select recipient...</option>
-                    <option value="jane.smith@company.com">Jane Smith - HR Manager</option>
-                    <option value="mike.johnson@company.com">Mike Johnson - Finance Director</option>
-                    <option value="sarah.davis@company.com">Sarah Davis - Operations Manager</option>
-                </select>
+
+                <label for="forwardTo" class="block text-lg font-semibold text-gray-700 mb-2 text-left">
+                    Current Owner
+                </label>
+                <div class="grid grid-cols-1 md:grid-cols-1 gap-5">
+                    <div>
+                        {{ $loginUserName }}
+                    </div>
+                </div>
             </div>
+
+            <div class="mb-4">
+                <label for="forwardTo" class="block text-lg font-semibold text-gray-700 mb-4 text-center">
+                    Forward To
+                </label>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    {{-- Office Selector --}}
+                    <div>
+                        <label for="officeID" class="block text-sm font-medium text-gray-700 mb-1">
+                            Office/Dept./Institute
+                        </label>
+
+                        <select
+                                id="officeID"
+                                wire:model="forwardToOfficeID"
+                                onchange="changedBodyInfo()"
+                                class="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                aria-label="Select Office"
+                        >
+                            <option value="">-- Choose an Office --</option>
+                            @foreach($bodyList as $key => $body)
+                                <option value="{{ $key }}">{{ $body }}</option>
+                            @endforeach
+                        </select>
+
+                        @error('forwardToOfficeID')
+                            <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span>
+                        @enderror
+
+                    </div>
+
+                    {{-- Employee Selector --}}
+                    <div>
+                        <label for="forwardTo" class="block text-sm font-medium text-gray-700 mb-1">
+                            Employee Information
+                        </label>
+
+                        <select
+                                id="forwardTo"
+                                wire:model="forwardToEmployee"
+                                class="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                aria-label="Select Person to Forward To"
+                        >
+                            <option value="">-- Choose a Person --</option>
+                            @if(!empty($employeeList))
+                                @foreach($employeeList as $employee)
+                                    <option value="{{ $employee['employee_id'] }}">
+                                        {{ $employee['emp_name'] }} ({{ $employee['emp_id'] }} - {{ $employee['designation_title'] }})
+                                    </option>
+                                @endforeach
+                            @endif
+                        </select>
+
+                        @error('forwardToEmployee')
+                            <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                </div>
+            </div>
+
 
             <div class="mb-4">
                 <label for="forwardMessage" class="block font-medium text-sm text-gray-700 mb-1">Message (Optional)</label>
-                <textarea id="forwardMessage" rows="3" class="w-full border border-gray-300 rounded-lg p-2" placeholder="Add a message for the recipient..."></textarea>
+                <textarea id="forwardMessage" wire:model="forwardMessage" rows="3" class="w-full border border-gray-300 rounded-lg p-2" placeholder="Add a message for the recipient..."></textarea>
             </div>
 
             <div class="flex justify-end gap-3">
-                <button onclick="forwardSelectedNote()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Forward Note</button>
-                <button onclick="assignSelectedNote()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg">Assign Note</button>
+                <button
+                        type="button"
+                        wire:click="saveforward()"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md transition duration-200 ease-in-out"
+                >
+                    Forward Note
+                </button>
+
+                <button  type="button" wire:click="closeForwardModalFun()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">Close</button>
             </div>
         </div>
     </div>
+    @endif
 
     <!-- Movement History Modal -->
-    <div id="MovementHistoryModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white w-full max-w-2xl mx-auto p-6 rounded-xl shadow-lg relative">
-            <!-- Modal Header -->
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-semibold text-gray-800">Note Movement History</h2>
-                <span onclick="closeMovementModal()" class="text-2xl text-gray-600 cursor-pointer hover:text-black">&times;</span>
-            </div>
+    @if($showViewMovementHistorydModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div class="bg-white w-full max-w-2xl mx-auto p-6 rounded-xl shadow-lg relative">
+                <!-- Modal Header -->
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800">Note Movement History</h2>
+                    <span wire:click="closeMovementModalFun()" class="text-2xl text-gray-600 cursor-pointer hover:text-black">&times;</span>
+                </div>
 
-            <!-- Modal Body -->
-            <div id="MovementModalBody" class="text-gray-700 space-y-4">
-                <!-- Movement data will be injected here -->
+                <!-- Modal Body -->
+                <div id="MovementModalBody" class="text-gray-700 space-y-4">
+                    @if (!empty($movementHistory))
+                        <div class="mb-5">
+                            <h3 class="text-xl font-semibold text-gray-800">Note: 45222</h3>
+                            <p class="text-sm text-gray-500">Complete journey and status history</p>
+                        </div>
+                        <div class="relative border-l-2 border-gray-300 pl-6 space-y-6">
+                            @foreach ($movementHistory as $index => $item)
+                                <div class="relative">
+                                    <div class="absolute -left-3 top-1 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-semibold shadow-md">
+                                        {{ $index + 1 }}
+                                    </div>
+                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <div class="font-medium text-gray-800">{{ $item['action'] }}</div>
+                                            <div class="text-sm text-gray-500">{{ $item['date'] }}</div>
+                                        </div>
+                                        <div class="text-sm text-gray-600">
+                                            <span class="font-medium text-gray-700">{{ $item['person'] }}</span> ({{ $item['email'] }})<br>
+                                            {{ $item['description'] }}
+                                            @if (!empty($item['forwardedTo']))
+                                                <div class="mt-1 text-blue-700">
+                                                    <strong>→ Forwarded to:</strong> <span class="font-medium">{{ $item['forwardedTo'] }}</span> ({{ $item['forwardedToEmail'] }})
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-center text-gray-500 py-10">No movement history available for this note.</p>
+                    @endif
+                </div>
             </div>
         </div>
-    </div>
+    @endif
+
 </div>
 
-
-
-
-<!-- Forward Modal -->
 <script>
-    function showForwardModal(noteId = '') {
-        const modal = document.getElementById('forwardModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex'); // Tailwind "flex" to center modal
+    function changedBodyInfo() {
+        const officeID = document.getElementById('officeID').value;
+        const forwardTo = document.getElementById('forwardTo');
 
-        // Preselect note in dropdown if available
-        if (noteId) {
-            const select = document.getElementById('selectNote');
-            select.value = noteId;
-        }
-    }
-
-    function closeForwardModal() {
-        const modal = document.getElementById('forwardModal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
-
-    function forwardSelectedNote() {
-        const note = document.getElementById('selectNote').value;
-        const recipient = document.getElementById('recipient').value;
-        const message = document.getElementById('forwardMessage').value;
-
-        if (!note || !recipient) {
-            alert("Please select a note and recipient.");
+        if (!officeID) {
+            forwardTo.innerHTML = '<option value="">-- Choose a Person --</option>';
             return;
         }
 
-        console.log("Forwarding Note:", note, "To:", recipient, "Message:", message);
-        // TODO: Add your backend call here
-        closeForwardModal();
+        fetch(`/get-employees/${officeID}`)
+            .then(response => response.json())
+            .then(result => {
+                console.log(result);
+                if (result.status === 'success' && Array.isArray(result.data)) {
+                    let options = '<option value="">-- Choose a Person --</option>';
+                    result.data.forEach(emp => {
+                        options += `<option value="${emp.employee_id}">${emp.emp_name} (${emp.emp_id} - ${emp.designation_title})</option>`;
+                    });
+                    forwardTo.innerHTML = options;
+                } else {
+                    forwardTo.innerHTML = '<option value="">No employees found</option>';
+                }
+            })
+            .catch(error => {
+
+                forwardTo.innerHTML = '<option value="">Error loading employees</option>';
+            });
     }
 
-    function assignSelectedNote() {
-        const note = document.getElementById('selectNote').value;
-        const recipient = document.getElementById('recipient').value;
-        const message = document.getElementById('forwardMessage').value;
-
-        if (!note || !recipient) {
-            alert("Please select a note and recipient.");
-            return;
-        }
-
-        console.log("Assigning Note:", note, "To:", recipient, "Message:", message);
-        // TODO: Add your backend call here
-        closeForwardModal();
-    }
 
     let noteCounter = 9;
 
@@ -389,57 +467,57 @@
 
 
 
-    function viewMovementHistory(serial) {
-        const history = MovementHistoryData[serial];
-        const modalBody = document.getElementById('MovementModalBody');
-
-        if (!history || history.length === 0) {
-            modalBody.innerHTML = `
-            <p class="text-center text-gray-500 py-10">
-                No movement history available for note <strong>${serial}</strong>.
-            </p>
-        `;
-        } else {
-            let timelineHTML = `
-            <div class="mb-5">
-                <h3 class="text-xl font-semibold text-gray-800">Note: ${serial}</h3>
-                <p class="text-sm text-gray-500">Complete journey and status history</p>
-            </div>
-            <div class="relative border-l-2 border-gray-300 pl-6 space-y-6">
-        `;
-
-            history.forEach((item, index) => {
-                timelineHTML += `
-                <div class="relative">
-                    <div class="absolute -left-3 top-1 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-semibold shadow-md">
-                        ${index + 1}
-                    </div>
-                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm">
-                        <div class="flex justify-between items-center mb-1">
-                            <div class="font-medium text-gray-800">${item.action}</div>
-                            <div class="text-sm text-gray-500">${item.date}</div>
-                        </div>
-                        <div class="text-sm text-gray-600">
-                            <span class="font-medium text-gray-700">${item.person}</span> (${item.email})<br>
-                            ${item.description}
-                            ${item.forwardedTo ? `
-                                <div class="mt-1 text-blue-700">
-                                    <strong>→ Forwarded to:</strong> <span class="font-medium">${item.forwardedTo}</span> (${item.forwardedToEmail})
-                                </div>` : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
-            });
-
-            timelineHTML += '</div>';
-            modalBody.innerHTML = timelineHTML;
-        }
-
-        const modal = document.getElementById('MovementHistoryModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    }
+    // function viewMovementHistory(serial) {
+    //     const history = MovementHistoryData[serial];
+    //     const modalBody = document.getElementById('MovementModalBody');
+    //
+    //     if (!history || history.length === 0) {
+    //         modalBody.innerHTML = `
+    //         <p class="text-center text-gray-500 py-10">
+    //             No movement history available for note <strong>${serial}</strong>.
+    //         </p>
+    //     `;
+    //     } else {
+    //         let timelineHTML = `
+    //         <div class="mb-5">
+    //             <h3 class="text-xl font-semibold text-gray-800">Note: ${serial}</h3>
+    //             <p class="text-sm text-gray-500">Complete journey and status history</p>
+    //         </div>
+    //         <div class="relative border-l-2 border-gray-300 pl-6 space-y-6">
+    //     `;
+    //
+    //         history.forEach((item, index) => {
+    //             timelineHTML += `
+    //             <div class="relative">
+    //                 <div class="absolute -left-3 top-1 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-semibold shadow-md">
+    //                     ${index + 1}
+    //                 </div>
+    //                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm">
+    //                     <div class="flex justify-between items-center mb-1">
+    //                         <div class="font-medium text-gray-800">${item.action}</div>
+    //                         <div class="text-sm text-gray-500">${item.date}</div>
+    //                     </div>
+    //                     <div class="text-sm text-gray-600">
+    //                         <span class="font-medium text-gray-700">${item.person}</span> (${item.email})<br>
+    //                         ${item.description}
+    //                         ${item.forwardedTo ? `
+    //                             <div class="mt-1 text-blue-700">
+    //                                 <strong>→ Forwarded to:</strong> <span class="font-medium">${item.forwardedTo}</span> (${item.forwardedToEmail})
+    //                             </div>` : ''}
+    //                     </div>
+    //                 </div>
+    //             </div>
+    //         `;
+    //         });
+    //
+    //         timelineHTML += '</div>';
+    //         modalBody.innerHTML = timelineHTML;
+    //     }
+    //
+    //     const modal = document.getElementById('MovementHistoryModal');
+    //     modal.classList.remove('hidden');
+    //     modal.classList.add('flex');
+    // }
 
     function closeMovementModal() {
         const modal = document.getElementById('MovementHistoryModal');

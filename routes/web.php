@@ -20,6 +20,11 @@ Route::middleware(['api.auth'])->group(function () {
     Route::get('/dashboard', Dashboard::class)->name('dashboard');
     Route::get('/notes/create', NoteTracking::class)->name('notes.create');
     Route::get('/notes/record', NoteTrackingRecord::class)->name('notes.record');
+
+//    Route::get('/getNoteInfo/{id}', [NoteTrackingRecord::class, 'getNoteInfo']);
+//    Route::get('/getEmployeeListByBodyChange/{id}', [NoteTrackingRecord::class, 'getEmployeeListByBodyChange']);
+    Route::get('/get-employees/{bodyId}', [NoteTrackingRecord::class, 'getEmployeeListByBodyChange']);
+
 });
 
 

@@ -13,14 +13,13 @@ use DB;
 
 class NoteTracking extends Component
 {
-    public $bodyId,$accessToken,$url,$secretKey;
+    public $bodyId,$accessToken,$url,$local_url,$secretKey;
 
     public $noteType = 'online';
     public $initiatedBy;
-    public $noteTitle;
-    public $noteRefNo;
-    public $noteContent;
+    public $noteTitle,$noteRefNo,$noteContent;
     public $employeeList = [];
+    public $employeeInfoByID = [];
 
     public function mount()
     {
@@ -28,6 +27,7 @@ class NoteTracking extends Component
         $this->bodyId       = session('user.body_id');
         $this->accessToken  = session('api_token');
         $this->url          = 'https://ssl.du.ac.bd/api/';
+        $this->local_url    = 'http://local.duwebadmin.com/api/';
         $this->secretKey    = '4a4cfb4a97000af785115cc9b53c313111e51d9a';
 
 
@@ -43,6 +43,8 @@ class NoteTracking extends Component
         } else {
             $this->employeeList  = $employeeList->json();
         }
+
+
         $this->initiatedBy = session('user')['user_id'];
 
     }
@@ -72,13 +74,15 @@ class NoteTracking extends Component
         DB::beginTransaction();
 
         try {
+            $initiatedEmployeeInfo    = NoteTrackingMeta::fetchEmployeeById($this->initiatedBy);
             $meta = NoteTrackingMeta::create([
-                'title'        => $this->noteTitle,
-                'reference_no' => $this->noteRefNo,
+                'type'           => $this->noteType,
+                'title'          => $this->noteTitle,
+                'reference_no'   => $this->noteRefNo,
                 'current_status' => 1,
-                'is_active'    => 1,
-                'created_by'   => $this->initiatedBy,
-                'created_ip'   => request()->ip(),
+                'is_active'      => 1,
+                'created_by'     => $this->initiatedBy,
+                'created_ip'     => request()->ip(),
             ]);
 
             NoteTrackingContent::create([
@@ -93,7 +97,7 @@ class NoteTracking extends Component
                 'note_meta_id' => $meta->id,
                 'note_action'  => 'Created',
                 'from_user'    => NULL,
-                'to_user'      => $this->initiatedBy,
+                'to_user'      => (!empty($initiatedEmployeeInfo) ? json_encode($initiatedEmployeeInfo) : NULL),
                 'status'       => 'Created',
                 'is_active'    => 1,
                 'created_by'   => $this->initiatedBy,

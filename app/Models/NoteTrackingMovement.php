@@ -14,6 +14,7 @@ class NoteTrackingMovement extends Model
         'from_user',
         'to_user',
         'status',
+        'message',
         'is_active',
         'created_by',
         'created_ip',

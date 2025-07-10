@@ -65,10 +65,13 @@ class NoteTrackingRecord extends Component
     {
 
         $noteTrackingMeta = NoteTrackingMeta::
-            leftJoin('note_tracking_contents', 'note_tracking_metas.id', '=', 'note_tracking_contents.note_meta_id')
-            ->leftJoin('note_tracking_movements', 'note_tracking_metas.id', '=', 'note_tracking_movements.note_meta_id')
+            with([
+                'content',
+                'latestMovement'
+            ])
             ->where('note_tracking_metas.is_active', 1)
             ->orderBy('note_tracking_metas.created_at', 'desc')
+            ->groupBy('note_tracking_metas.id')
             ->get();
 
         return view('livewire.note_tracking.record',['noteTrackingMeta'=>$noteTrackingMeta]);
@@ -117,7 +120,6 @@ class NoteTrackingRecord extends Component
 
     public function saveforward()
     {
-
         // Validation
         $this->validate([
             'forwardToOfficeID'     => 'required|integer',
@@ -126,14 +128,19 @@ class NoteTrackingRecord extends Component
         ]);
 
         try {
+            $initiatedEmployeeInfo    = NoteTrackingMeta::fetchEmployeeById($this->initiatedBy);
+            $forwardedEmployeeInfo    = NoteTrackingMeta::fetchEmployeeById($this->forwardToEmployee);
             // Save movement or forward logic
             NoteTrackingMovement::create([
                 'note_meta_id' => $this->note_meta_id,
                 'note_action'  => 'forwarded',
-                'from_user'    => $this->initiatedBy, // or $this->initiatedBy
-                'to_user'      => $this->forwardToEmployee,
+                'from_user'    => (!empty($initiatedEmployeeInfo) ? json_encode($initiatedEmployeeInfo) : NULL), // or $this->initiatedBy
+                'to_user'      => (!empty($forwardedEmployeeInfo) ? json_encode($forwardedEmployeeInfo) : NULL),
+                'message'      => $this->forwardMessage,
                 'status'       => 'forwarded',
                 'is_active'    => 1,
+                'created_by'   => $this->initiatedBy,
+                'created_ip'   => request()->ip(),
             ]);
 
             session()->flash('message', 'Note forwarded successfully.');
@@ -154,14 +161,11 @@ class NoteTrackingRecord extends Component
         $this->resetValidation(['forwardToOfficeID', 'forwardToEmployee']);
 
 
-        $noteTrackingMeta = NoteTrackingMeta::
-        leftJoin('note_tracking_contents', 'note_tracking_metas.id', '=', 'note_tracking_contents.note_meta_id')
-            ->leftJoin('note_tracking_movements', 'note_tracking_metas.id', '=', 'note_tracking_movements.note_meta_id')
+        $noteTrackingMeta = NoteTrackingMeta::select('note_tracking_metas.*')
             ->where('note_tracking_metas.is_active', 1)
             ->orderBy('note_tracking_metas.created_at', 'desc')
             ->where('note_tracking_metas.id', $id)
             ->first();
-
         if ($noteTrackingMeta) {
             $this->note_meta_id = $noteTrackingMeta->id;
             $this->noteTitle = $noteTrackingMeta->title;
@@ -186,61 +190,76 @@ class NoteTrackingRecord extends Component
     {
         $this->showViewMovementHistorydModal=true;
 
-        $noteMoveHistory = [
-        [
-            'action'      => 'Created',
-            'person'      => 'John Doe',
-            'email'       => 'john.doe@company.com',
-            'date'        => 'May 20, 2025 11:00 AM',
-            'description' => 'Quarterly sales report created',
-            'status'      => 'created',
-        ],
-        [
-            'action'            => 'Forwarded',
-            'person'            => 'John Doe',
-            'email'             => 'john.doe@company.com',
-            'forwardedTo'       => 'Sarah Davis',
-            'forwardedToEmail'  => 'sarah.davis@company.com',
-            'date'              => 'May 20, 2025 11:30 AM',
-            'description'       => 'Sent to Sarah Davis for analysis',
-            'status'            => 'forwarded',
-        ],
-        [
-            'action'      => 'Received',
-            'person'      => 'Sarah Davis',
-            'email'       => 'sarah.davis@company.com',
-            'date'        => 'May 20, 2025 02:15 PM',
-            'description' => 'Note received and reviewed',
-            'status'      => 'received',
-        ],
-        [
-            'action'            => 'Assigned',
-            'person'            => 'Sarah Davis',
-            'email'             => 'sarah.davis@company.com',
-            'forwardedTo'       => 'Tom Wilson',
-            'forwardedToEmail'  => 'tom.wilson@company.com',
-            'date'              => 'May 21, 2025 09:00 AM',
-            'description'       => 'Assigned to Tom Wilson for final review',
-            'status'            => 'forwarded',
-        ],
-        [
-            'action'      => 'Received',
-            'person'      => 'Tom Wilson',
-            'email'       => 'tom.wilson@company.com',
-            'date'        => 'May 21, 2025 10:30 AM',
-            'description' => 'Final review completed',
-            'status'      => 'received',
-        ],
-        [
-            'action'      => 'Closed',
-            'person'      => 'Tom Wilson',
-            'email'       => 'tom.wilson@company.com',
-            'date'        => 'May 22, 2025 04:00 PM',
-            'description' => 'Report approved and archived',
-            'status'      => 'closed',
-        ],
-    ];
-        $this->movementHistory=$noteMoveHistory;
+        $noteTrackingMeta = NoteTrackingMeta::
+        with([
+            'content',
+            'movementHistory'
+        ])
+            ->where('note_tracking_metas.is_active', 1)
+            ->where('note_tracking_metas.id', $noteID)
+            ->orderBy('note_tracking_metas.created_at', 'desc')
+            ->groupBy('note_tracking_metas.id')
+            ->first();
+
+        $this->movementHistory=$noteTrackingMeta;
+
+//
+//        dd($noteTrackingMeta);
+//        $noteTrackingMeta = [
+//        [
+//            'action'      => 'Created',
+//            'person'      => 'John Doe',
+//            'email'       => 'john.doe@company.com',
+//            'date'        => 'May 20, 2025 11:00 AM',
+//            'description' => 'Quarterly sales report created',
+//            'status'      => 'created',
+//        ],
+//        [
+//            'action'            => 'Forwarded',
+//            'person'            => 'John Doe',
+//            'email'             => 'john.doe@company.com',
+//            'forwardedTo'       => 'Sarah Davis',
+//            'forwardedToEmail'  => 'sarah.davis@company.com',
+//            'date'              => 'May 20, 2025 11:30 AM',
+//            'description'       => 'Sent to Sarah Davis for analysis',
+//            'status'            => 'forwarded',
+//        ],
+//        [
+//            'action'      => 'Received',
+//            'person'      => 'Sarah Davis',
+//            'email'       => 'sarah.davis@company.com',
+//            'date'        => 'May 20, 2025 02:15 PM',
+//            'description' => 'Note received and reviewed',
+//            'status'      => 'received',
+//        ],
+//        [
+//            'action'            => 'Assigned',
+//            'person'            => 'Sarah Davis',
+//            'email'             => 'sarah.davis@company.com',
+//            'forwardedTo'       => 'Tom Wilson',
+//            'forwardedToEmail'  => 'tom.wilson@company.com',
+//            'date'              => 'May 21, 2025 09:00 AM',
+//            'description'       => 'Assigned to Tom Wilson for final review',
+//            'status'            => 'forwarded',
+//        ],
+//        [
+//            'action'      => 'Received',
+//            'person'      => 'Tom Wilson',
+//            'email'       => 'tom.wilson@company.com',
+//            'date'        => 'May 21, 2025 10:30 AM',
+//            'description' => 'Final review completed',
+//            'status'      => 'received',
+//        ],
+//        [
+//            'action'      => 'Closed',
+//            'person'      => 'Tom Wilson',
+//            'email'       => 'tom.wilson@company.com',
+//            'date'        => 'May 22, 2025 04:00 PM',
+//            'description' => 'Report approved and archived',
+//            'status'      => 'closed',
+//        ],
+//    ];
+//        $this->movementHistory=$noteTrackingMeta;
 
     }
     public  function closeMovementModalFun()

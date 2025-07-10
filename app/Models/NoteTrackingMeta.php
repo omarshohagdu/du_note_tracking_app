@@ -2,6 +2,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Http;
 
 class NoteTrackingMeta extends Model
 {
@@ -17,4 +18,38 @@ class NoteTrackingMeta extends Model
         'updated_by',
         'updated_ip',
     ];
+
+    public function content() {
+        return $this->hasOne(NoteTrackingContent::class, 'note_meta_id');
+    }
+
+    public function latestMovement() {
+        return $this->hasOne(NoteTrackingMovement::class, 'note_meta_id')
+            ->latestOfMany(); // Laravel 8+
+    }
+    public function movementHistory() {
+        return $this->hasMany(NoteTrackingMovement::class, 'note_meta_id')
+            ->orderBy('created_at', 'asc'); // or 'desc' if needed
+    }
+
+    public static function fetchEmployeeById($employeeId)
+    {
+        $local_url    = 'http://local.duwebadmin.com/api/';
+        $secretKey    = '4a4cfb4a97000af785115cc9b53c313111e51d9a';
+        $accessToken  = session('api_token');
+
+        $response = Http::withHeaders([
+            'secret-key'    => $secretKey,
+            'Authorization' => 'Bearer ' . $accessToken,
+        ])->post($local_url . 'searchEmployeeById', [
+            'employee_id' => $employeeId,
+        ]);
+
+        if ($response->failed()) {
+            return null;
+        }
+
+        return $response->json()['data'] ?? null;
+    }
+
 }

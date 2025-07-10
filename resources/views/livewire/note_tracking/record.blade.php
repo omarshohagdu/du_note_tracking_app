@@ -23,7 +23,7 @@
                         <p class="text-sm text-gray-500">Created: {{ $note['created_at'] }} | Type: {{ $note['type'] }}</p>
                     </div>
                     <span class="bg-orange-100 text-orange-600 text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
-                        {{ $note['status']??NULL }}
+                        {{ $note->latestMovement->status??NULL }}
                     </span>
                 </div>
                 <p class="text-gray-700 mt-4">
@@ -55,8 +55,8 @@
             <button  type="button" wire:click="closeForwardModalFun()" class="absolute top-2 right-3 text-gray-600 hover:text-black text-xl">&times;</button>
 
             <div class="mb-4">
-                <label for="selectNote" class="block font-medium text-sm text-gray-700 mb-1">Note Title</label>
-                <div id="noteTitle"></div>
+                <label for="noteTitle" class="block text-lg font-semibold text-gray-700 mb-2 text-left">Note Title</label>
+               {{ $noteTitle??NULL }}
                 <input type="hidden" wire:model.defer="note_meta_id" id="note_meta_id">
             </div>
 
@@ -169,26 +169,37 @@
                 <div id="MovementModalBody" class="text-gray-700 space-y-4">
                     @if (!empty($movementHistory))
                         <div class="mb-5">
-                            <h3 class="text-xl font-semibold text-gray-800">Note: 45222</h3>
-                            <p class="text-sm text-gray-500">Complete journey and status history</p>
+                            <h3 class="text-xl font-semibold text-gray-800">{{ $movementHistory->reference_no??NULL }}</h3>
+                            <p class="text-sm text-gray-500">{{ $movementHistory->title??NULL }}</p>
                         </div>
                         <div class="relative border-l-2 border-gray-300 pl-6 space-y-6">
-                            @foreach ($movementHistory as $index => $item)
+                            @foreach ($movementHistory->movementHistory as $index => $item)
+                                    <?php
+                                    $fromUserData       = !empty($item->from_user)? json_decode($item->from_user, true) : [];
+                                    $toUserData         = !empty($item->to_user)? json_decode($item->to_user, true) : [];
+                                    ?>
                                 <div class="relative">
                                     <div class="absolute -left-3 top-1 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-semibold shadow-md">
                                         {{ $index + 1 }}
                                     </div>
                                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm">
                                         <div class="flex justify-between items-center mb-1">
-                                            <div class="font-medium text-gray-800">{{ $item['action'] }}</div>
-                                            <div class="text-sm text-gray-500">{{ $item['date'] }}</div>
+                                            <div class="font-medium text-gray-800">{{ $item->status }}</div>
+                                            <div class="text-sm text-gray-500">{{ $item->created_at }}</div>
                                         </div>
                                         <div class="text-sm text-gray-600">
-                                            <span class="font-medium text-gray-700">{{ $item['person'] }}</span> ({{ $item['email'] }})<br>
-                                            {{ $item['description'] }}
-                                            @if (!empty($item['forwardedTo']))
+                                            @if (!empty($fromUserData))
+                                                <span class="font-medium text-gray-700"> {{ $fromUserData['emp_name'] ?? '' }} ({{ $fromUserData['email'] ?? '' }}) </span> ({{ $fromUserData['designation_en']??NULL }})<br>
+                                            @endif
+                                            {{ $item['message']??NULL }}
+                                            @if (!empty($toUserData))
                                                 <div class="mt-1 text-blue-700">
-                                                    <strong>→ Forwarded to:</strong> <span class="font-medium">{{ $item['forwardedTo'] }}</span> ({{ $item['forwardedToEmail'] }})
+                                                    @if (empty($fromUserData))
+                                                        <strong>→ Created By: </strong> <span class="font-medium">
+                                                    @else
+                                                                <strong>→ Forwarded to: </strong> <span class="font-medium">
+                                                    @endif
+                                                                    {{ $toUserData['emp_name'] }}</span> ({{ $toUserData['email'] }})
                                                 </div>
                                             @endif
                                         </div>
@@ -200,6 +211,7 @@
                         <p class="text-center text-gray-500 py-10">No movement history available for this note.</p>
                     @endif
                 </div>
+
             </div>
         </div>
     @endif

@@ -12,10 +12,10 @@
     <div class="bg-white rounded-lg shadow p-6 text-center">
         <a href="{{ route('patient.list') }}">
             <h2 class="text-xl font-semibold text-gray-900 mb-2">
-                Created Notes
+              Total  Created Notes
             </h2>
             <div class="text-3xl font-bold text-blue-600">
-               {{ !empty($totalPatient)?$totalPatient:'0' }}
+               {{ !empty($myCreatedNotes)?$myCreatedNotes:'0' }}
 
             </div>
         </a>
@@ -24,10 +24,10 @@
     <!-- Today's Patients -->
     <div class="bg-white rounded-lg shadow p-6 text-center">
         <h2 class="text-xl font-semibold text-gray-900 mb-2">
-            <a href="#"> Forward Notes</a>
+            <a href="#"> Forward Notes to me</a>
         </h2>
         <div class="text-3xl font-bold text-green-600">
-            {{ !empty($todayPatient)?$todayPatient:'0' }}
+            {{ !empty($forwardsNotesToMe)?$forwardsNotesToMe:'0' }}
         </div>
     </div>
 </div>

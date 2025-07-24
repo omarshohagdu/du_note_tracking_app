@@ -13,7 +13,7 @@ use DB;
 
 class NoteTracking extends Component
 {
-    public $bodyId,$accessToken,$url,$local_url,$secretKey;
+    public $bodyId,$accessToken,$url,$secretKey;
 
     public $noteType = 'online';
     public $initiatedBy;
@@ -26,9 +26,8 @@ class NoteTracking extends Component
         // Assign session value here
         $this->bodyId       = session('user.body_id');
         $this->accessToken  = session('api_token');
-        $this->url          = 'https://ssl.du.ac.bd/api/';
-        $this->local_url    = 'http://local.duwebadmin.com/api/';
-        $this->secretKey    = '4a4cfb4a97000af785115cc9b53c313111e51d9a';
+        $this->url          = liveApiUrl();
+        $this->secretKey    = secretKey();
 
 
         $employeeList = Http::withHeaders([

@@ -14,12 +14,12 @@
 
             <div class="mb-4">
                 <label class="block text-gray-700">Email</label>
-                <input wire:model="email" type="email" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring focus:ring-blue-200" required>
+                <input wire:model="email" placeholder="Enter Email Address" type="email" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring focus:ring-blue-200" required>
             </div>
 
             <div class="mb-4">
                 <label class="block text-gray-700">Password</label>
-                <input wire:model="password" type="password" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring focus:ring-blue-200" required>
+                <input wire:model="password" placeholder="Enter Passsword" type="password" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring focus:ring-blue-200" required>
             </div>
 
             <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Login</button>

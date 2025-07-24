@@ -34,14 +34,14 @@ class NoteTrackingMeta extends Model
 
     public static function fetchEmployeeById($employeeId)
     {
-        $local_url    = 'http://local.duwebadmin.com/api/';
-        $secretKey    = '4a4cfb4a97000af785115cc9b53c313111e51d9a';
-        $accessToken  = session('api_token');
+        $url            = 'https://ssl.du.ac.bd/api/';
+        $secretKey      = '4a4cfb4a97000af785115cc9b53c313111e51d9a';
+        $accessToken    = session('api_token');
 
         $response = Http::withHeaders([
             'secret-key'    => $secretKey,
             'Authorization' => 'Bearer ' . $accessToken,
-        ])->post($local_url . 'searchEmployeeById', [
+        ])->post($url . 'searchEmployeeById', [
             'employee_id' => $employeeId,
         ]);
 

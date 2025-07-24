@@ -58,22 +58,32 @@ class NoteTrackingRecord extends Component
         $this->loginUserName    = session('user')['emp_name'].", ".session('user')['body_name'];
         $this->loginOfficeName  = session('user')['bodyid'];
 
-
-
+     //   dd(session('user')['user_id']);
+        //45320
     }
     public function render()
     {
-
-        $noteTrackingMeta = NoteTrackingMeta::
-            with([
-                'content',
-                'latestMovement'
-            ])
-            ->where('note_tracking_metas.is_active', 1)
+        $loggedInUserId = session('user')['user_id'];
+        $noteTrackingMeta = NoteTrackingMeta::with([
+            'content',
+            'latestMovement' => function ($query) {
+                $query->where('is_active', 1);
+            }
+        ])->where('note_tracking_metas.is_active', 1)
+            ->where('note_tracking_metas.created_by', $loggedInUserId)
             ->orderBy('note_tracking_metas.created_at', 'desc')
-            ->groupBy('note_tracking_metas.id')
-            ->get();
-
+            ->get()
+            ->map(function ($meta) use ($loggedInUserId) {;
+                $meta->initiated_by_name    = NoteTrackingMeta::fetchEmployeeById($meta->created_by);
+                $meta->latest_movement      = $meta->latestMovement;
+                if ($meta->latest_movement && !empty($meta->latest_movement->to_user)  && $meta->current_status!=4) {
+                    $toUser = json_decode($meta->latest_movement->to_user, true);
+                    $meta->is_assigned_to_me = ($toUser['employee_id'] ?? null) == $loggedInUserId ? "Yes" : "No";
+                } else {
+                    $meta->is_assigned_to_me = "No";
+                }
+                return $meta;
+            });
         return view('livewire.note_tracking.record',['noteTrackingMeta'=>$noteTrackingMeta]);
     }
     public function getNoteInfo($id)
@@ -202,70 +212,39 @@ class NoteTrackingRecord extends Component
             ->first();
 
         $this->movementHistory=$noteTrackingMeta;
-
-//
-//        dd($noteTrackingMeta);
-//        $noteTrackingMeta = [
-//        [
-//            'action'      => 'Created',
-//            'person'      => 'John Doe',
-//            'email'       => 'john.doe@company.com',
-//            'date'        => 'May 20, 2025 11:00 AM',
-//            'description' => 'Quarterly sales report created',
-//            'status'      => 'created',
-//        ],
-//        [
-//            'action'            => 'Forwarded',
-//            'person'            => 'John Doe',
-//            'email'             => 'john.doe@company.com',
-//            'forwardedTo'       => 'Sarah Davis',
-//            'forwardedToEmail'  => 'sarah.davis@company.com',
-//            'date'              => 'May 20, 2025 11:30 AM',
-//            'description'       => 'Sent to Sarah Davis for analysis',
-//            'status'            => 'forwarded',
-//        ],
-//        [
-//            'action'      => 'Received',
-//            'person'      => 'Sarah Davis',
-//            'email'       => 'sarah.davis@company.com',
-//            'date'        => 'May 20, 2025 02:15 PM',
-//            'description' => 'Note received and reviewed',
-//            'status'      => 'received',
-//        ],
-//        [
-//            'action'            => 'Assigned',
-//            'person'            => 'Sarah Davis',
-//            'email'             => 'sarah.davis@company.com',
-//            'forwardedTo'       => 'Tom Wilson',
-//            'forwardedToEmail'  => 'tom.wilson@company.com',
-//            'date'              => 'May 21, 2025 09:00 AM',
-//            'description'       => 'Assigned to Tom Wilson for final review',
-//            'status'            => 'forwarded',
-//        ],
-//        [
-//            'action'      => 'Received',
-//            'person'      => 'Tom Wilson',
-//            'email'       => 'tom.wilson@company.com',
-//            'date'        => 'May 21, 2025 10:30 AM',
-//            'description' => 'Final review completed',
-//            'status'      => 'received',
-//        ],
-//        [
-//            'action'      => 'Closed',
-//            'person'      => 'Tom Wilson',
-//            'email'       => 'tom.wilson@company.com',
-//            'date'        => 'May 22, 2025 04:00 PM',
-//            'description' => 'Report approved and archived',
-//            'status'      => 'closed',
-//        ],
-//    ];
-//        $this->movementHistory=$noteTrackingMeta;
-
     }
     public  function closeMovementModalFun()
     {
 
         $this->showViewMovementHistorydModal = false;
+    }
+
+    public function closeNoteModalFun($id)
+    {
+        $meta = NoteTrackingMeta::find($id); // Replace $noteId with the actual ID
+        $closedEmployeeInfo    = NoteTrackingMeta::fetchEmployeeById($this->initiatedBy);
+        if ($meta) {
+            $meta->update([
+                'current_status' => 4,
+                'is_active'      => 1,
+                'updated_by'     => $this->initiatedBy,
+                'updated_ip'     => request()->ip(),
+            ]);
+            NoteTrackingMovement::create([
+                'note_meta_id' => $id,
+                'note_action'  => 'closed',
+                'to_user'      => (!empty($closedEmployeeInfo) ? json_encode($closedEmployeeInfo) : NULL),
+                'status'       => 'closed',
+                'is_active'    => 1,
+                'updated_by'   => $this->initiatedBy,
+                'updated_ip'   => request()->ip(),
+            ]);
+
+            session()->flash('message', 'Note  successfully closed.');
+        }
+        else {
+            session()->flash('error', 'Note not found.');
+        }
     }
 
 }

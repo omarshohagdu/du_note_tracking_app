@@ -20,7 +20,7 @@
                     <div>
                         <h3 class="text-lg font-semibold text-gray-800">{{ $note['title'] }}</h3>
                         <p class="text-sm text-gray-500"><strong>Serial:</strong> {{ $note['reference_no']??NULL }}</p>
-                        <p class="text-sm text-gray-500">Created: {{ $note['created_at'] }} | Type: {{ $note['type'] }}</p>
+                        <p class="text-sm text-gray-500">Created: {{ formatDate($note['created_at']) }} | Type: {{ $note['type'] }}</p>
                     </div>
                     <span class="bg-orange-100 text-orange-600 text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
                         {{ $note->latestMovement->status??NULL }}
@@ -34,10 +34,39 @@
                             wire:click="viewMovementHistoryFun('{{ $note['id'] }}')">
                         Movement History
                     </button>
-                    <button type="button" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+                    @if(!empty($note['is_assigned_to_me']) && $note['is_assigned_to_me'] == 'Yes')
+                        <button type="button" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
                             wire:click="showForwardModalFun('{{ $note['id'] }}')">Forward</button>
-                    <button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">Close</button>
 
+
+
+                        <div x-data="{ confirmClose: false, noteId: null }">
+                            <!-- Close Button -->
+                            <button
+                                    type="button"
+                                    @click="confirmClose = true; noteId = '{{ $note['id'] }}'"
+                                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">
+                                Close
+                            </button>
+
+                            <!-- Confirmation Modal -->
+                            <div x-show="confirmClose" x-cloak
+                                 class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                                <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm space-y-4">
+                                    <h2 class="text-lg font-semibold">Are you sure?</h2>
+                                    <p>This action cannot be changed.</p>
+                                    <div class="flex justify-end gap-2">
+                                        <button @click="confirmClose = false"
+                                                class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+                                        <button @click="$wire.closeNoteModalFun(noteId); confirmClose = false"
+                                                class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Yes, Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    @endif
                 </div>
             </div>
         @endforeach
@@ -141,6 +170,7 @@
             </div>
 
             <div class="flex justify-end gap-3">
+
                 <button
                         type="button"
                         wire:click="saveforward()"
@@ -185,7 +215,7 @@
                                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm">
                                         <div class="flex justify-between items-center mb-1">
                                             <div class="font-medium text-gray-800">{{ $item->status }}</div>
-                                            <div class="text-sm text-gray-500">{{ $item->created_at }}</div>
+                                            <div class="text-sm text-gray-500">{{ formatDate($item->created_at) }}</div>
                                         </div>
                                         <div class="text-sm text-gray-600">
                                             @if (!empty($fromUserData))
@@ -246,295 +276,6 @@
 
                 forwardTo.innerHTML = '<option value="">Error loading employees</option>';
             });
-    }
-
-
-    let noteCounter = 9;
-
-    // Movement history data with "forwarded to" information
-    const MovementHistoryData = {
-        'NTE-2025-001': [
-            {
-                action: 'Created',
-                person: 'Sarah Davis',
-                email: 'sarah.davis@company.com',
-                date: 'May 25, 2025 09:30 AM',
-                description: 'Note created and saved to system',
-                status: 'created'
-            },
-            {
-                action: 'Forwarded',
-                person: 'Sarah Davis',
-                email: 'sarah.davis@company.com',
-                forwardedTo: 'John Doe',
-                forwardedToEmail: 'john.doe@company.com',
-                date: 'May 25, 2025 10:15 AM',
-                description: 'Forwarded to John Doe for review',
-                status: 'forwarded'
-            },
-            {
-                action: 'In Transit',
-                person: 'System',
-                email: 'system@company.com',
-                date: 'May 25, 2025 10:16 AM',
-                description: 'Note marked as in transit to John Doe',
-                status: 'forwarded'
-            }
-        ],
-        'NTE-2025-002': [
-            {
-                action: 'Created',
-                person: 'Mike Johnson',
-                email: 'mike.johnson@company.com',
-                date: 'May 20, 2025 08:00 AM',
-                description: 'Budget approval request created',
-                status: 'created'
-            },
-            {
-                action: 'Forwarded',
-                person: 'Mike Johnson',
-                email: 'mike.johnson@company.com',
-                forwardedTo: 'John Doe',
-                forwardedToEmail: 'john.doe@company.com',
-                date: 'May 20, 2025 08:30 AM',
-                description: 'Sent to John Doe for approval',
-                status: 'forwarded'
-            },
-            {
-                action: 'Received',
-                person: 'John Doe',
-                email: 'john.doe@company.com',
-                date: 'May 20, 2025 11:00 AM',
-                description: 'Note accepted and under review',
-                status: 'received'
-            }
-        ],
-        'NTE-2025-003': [
-            {
-                action: 'Created',
-                person: 'John Doe',
-                email: 'john.doe@company.com',
-                date: 'May 15, 2025 03:00 PM',
-                description: 'Board meeting minutes created',
-                status: 'created'
-            },
-            {
-                action: 'Forwarded',
-                person: 'John Doe',
-                email: 'john.doe@company.com',
-                forwardedTo: 'All Board Members',
-                forwardedToEmail: 'board@company.com',
-                date: 'May 15, 2025 03:30 PM',
-                description: 'Sent to all board members for review',
-                status: 'forwarded'
-            },
-            {
-                action: 'Received',
-                person: 'Jane Smith',
-                email: 'jane.smith@company.com',
-                date: 'May 16, 2025 09:00 AM',
-                description: 'Reviewed and approved by HR',
-                status: 'received'
-            },
-            {
-                action: 'Closed',
-                person: 'Jane Smith',
-                email: 'jane.smith@company.com',
-                date: 'May 16, 2025 04:00 PM',
-                description: 'Minutes approved and archived',
-                status: 'closed'
-            }
-        ],
-        'NTE-2025-005': [
-            {
-                action: 'Created',
-                person: 'John Doe',
-                email: 'john.doe@company.com',
-                date: 'June 1, 2025 09:30 AM',
-                description: 'Employee handbook update created',
-                status: 'created'
-            },
-            {
-                action: 'Forwarded',
-                person: 'John Doe',
-                email: 'john.doe@company.com',
-                forwardedTo: 'Jane Smith',
-                forwardedToEmail: 'jane.smith@company.com',
-                date: 'June 1, 2025 10:15 AM',
-                description: 'Forwarded to Jane Smith for HR review',
-                status: 'forwarded'
-            },
-            {
-                action: 'In Transit',
-                person: 'System',
-                email: 'system@company.com',
-                date: 'June 1, 2025 10:16 AM',
-                description: 'Note marked as in transit to Jane Smith',
-                status: 'forwarded'
-            }
-        ],
-        'NTE-2025-006': [
-            {
-                action: 'Created',
-                person: 'John Doe',
-                email: 'john.doe@company.com',
-                date: 'May 28, 2025 02:45 PM',
-                description: 'Offline note registered in system',
-                status: 'created'
-            },
-            {
-                action: 'Forwarded',
-                person: 'John Doe',
-                email: 'john.doe@company.com',
-                forwardedTo: 'Mike Johnson',
-                forwardedToEmail: 'mike.johnson@company.com',
-                date: 'May 28, 2025 03:00 PM',
-                description: 'Physical document handed to Mike Johnson',
-                status: 'forwarded'
-            },
-            {
-                action: 'Received',
-                person: 'Mike Johnson',
-                email: 'mike.johnson@company.com',
-                date: 'May 28, 2025 03:05 PM',
-                description: 'Note accepted and confirmed receipt',
-                status: 'received'
-            }
-        ],
-        'NTE-2025-007': [
-            {
-                action: 'Created',
-                person: 'John Doe',
-                email: 'john.doe@company.com',
-                date: 'May 20, 2025 11:00 AM',
-                description: 'Quarterly sales report created',
-                status: 'created'
-            },
-            {
-                action: 'Forwarded',
-                person: 'John Doe',
-                email: 'john.doe@company.com',
-                forwardedTo: 'Sarah Davis',
-                forwardedToEmail: 'sarah.davis@company.com',
-                date: 'May 20, 2025 11:30 AM',
-                description: 'Sent to Sarah Davis for analysis',
-                status: 'forwarded'
-            },
-            {
-                action: 'Received',
-                person: 'Sarah Davis',
-                email: 'sarah.davis@company.com',
-                date: 'May 20, 2025 02:15 PM',
-                description: 'Note received and reviewed',
-                status: 'received'
-            },
-            {
-                action: 'Assigned',
-                person: 'Sarah Davis',
-                email: 'sarah.davis@company.com',
-                forwardedTo: 'Tom Wilson',
-                forwardedToEmail: 'tom.wilson@company.com',
-                date: 'May 21, 2025 09:00 AM',
-                description: 'Assigned to Tom Wilson for final review',
-                status: 'forwarded'
-            },
-            {
-                action: 'Received',
-                person: 'Tom Wilson',
-                email: 'tom.wilson@company.com',
-                date: 'May 21, 2025 10:30 AM',
-                description: 'Final review completed',
-                status: 'received'
-            },
-            {
-                action: 'Closed',
-                person: 'Tom Wilson',
-                email: 'tom.wilson@company.com',
-                date: 'May 22, 2025 04:00 PM',
-                description: 'Report approved and archived',
-                status: 'closed'
-            }
-        ],
-        'NTE-2025-008': [
-            {
-                action: 'Created',
-                person: 'John Doe',
-                email: 'john.doe@company.com',
-                date: 'May 15, 2025 08:00 AM',
-                description: 'Budget allocation request submitted',
-                status: 'created'
-            },
-            {
-                action: 'Forwarded',
-                person: 'John Doe',
-                email: 'john.doe@company.com',
-                forwardedTo: 'Finance Department',
-                forwardedToEmail: 'finance@company.com',
-                date: 'May 15, 2025 08:30 AM',
-                description: 'Sent to Finance Department for approval',
-                status: 'forwarded'
-            }
-        ]
-    };
-
-
-
-    // function viewMovementHistory(serial) {
-    //     const history = MovementHistoryData[serial];
-    //     const modalBody = document.getElementById('MovementModalBody');
-    //
-    //     if (!history || history.length === 0) {
-    //         modalBody.innerHTML = `
-    //         <p class="text-center text-gray-500 py-10">
-    //             No movement history available for note <strong>${serial}</strong>.
-    //         </p>
-    //     `;
-    //     } else {
-    //         let timelineHTML = `
-    //         <div class="mb-5">
-    //             <h3 class="text-xl font-semibold text-gray-800">Note: ${serial}</h3>
-    //             <p class="text-sm text-gray-500">Complete journey and status history</p>
-    //         </div>
-    //         <div class="relative border-l-2 border-gray-300 pl-6 space-y-6">
-    //     `;
-    //
-    //         history.forEach((item, index) => {
-    //             timelineHTML += `
-    //             <div class="relative">
-    //                 <div class="absolute -left-3 top-1 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-semibold shadow-md">
-    //                     ${index + 1}
-    //                 </div>
-    //                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm">
-    //                     <div class="flex justify-between items-center mb-1">
-    //                         <div class="font-medium text-gray-800">${item.action}</div>
-    //                         <div class="text-sm text-gray-500">${item.date}</div>
-    //                     </div>
-    //                     <div class="text-sm text-gray-600">
-    //                         <span class="font-medium text-gray-700">${item.person}</span> (${item.email})<br>
-    //                         ${item.description}
-    //                         ${item.forwardedTo ? `
-    //                             <div class="mt-1 text-blue-700">
-    //                                 <strong>→ Forwarded to:</strong> <span class="font-medium">${item.forwardedTo}</span> (${item.forwardedToEmail})
-    //                             </div>` : ''}
-    //                     </div>
-    //                 </div>
-    //             </div>
-    //         `;
-    //         });
-    //
-    //         timelineHTML += '</div>';
-    //         modalBody.innerHTML = timelineHTML;
-    //     }
-    //
-    //     const modal = document.getElementById('MovementHistoryModal');
-    //     modal.classList.remove('hidden');
-    //     modal.classList.add('flex');
-    // }
-
-    function closeMovementModal() {
-        const modal = document.getElementById('MovementHistoryModal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
     }
 </script>
 

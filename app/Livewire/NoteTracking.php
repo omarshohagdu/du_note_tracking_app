@@ -63,6 +63,14 @@ class NoteTracking extends Component
 
     public function submitNoteInfo()
     {
+        if (!session('api_token')) {
+            session()->flash('error', 'Session expired, please login again.');
+            return redirect()->route('api.login');
+        }
+        if (empty($this->initiatedBy)) {
+            return session()->flash('error', 'Initiated by field is required.');
+
+        }
         $this->validate([
             'noteTitle' => 'required|string|max:255',
             'noteRefNo' => 'required|string|max:255',

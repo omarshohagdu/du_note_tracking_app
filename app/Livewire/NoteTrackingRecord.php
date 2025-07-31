@@ -84,6 +84,7 @@ class NoteTrackingRecord extends Component
                 }
                 return $meta;
             });
+       // dd($noteTrackingMeta);
         return view('livewire.note_tracking.record',['noteTrackingMeta'=>$noteTrackingMeta]);
     }
     public function getNoteInfo($id)
@@ -146,6 +147,7 @@ class NoteTrackingRecord extends Component
                 'note_action'  => 'forwarded',
                 'from_user'    => (!empty($initiatedEmployeeInfo) ? json_encode($initiatedEmployeeInfo) : NULL), // or $this->initiatedBy
                 'to_user'      => (!empty($forwardedEmployeeInfo) ? json_encode($forwardedEmployeeInfo) : NULL),
+                'current_status'=> 1, // forwarded but not Accepted yet
                 'message'      => $this->forwardMessage,
                 'status'       => 'forwarded',
                 'is_active'    => 1,

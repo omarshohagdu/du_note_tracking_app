@@ -9,9 +9,12 @@ use Livewire\Component;
 use Illuminate\Support\Facades\DB;
 class Dashboard extends Component
 {
+    public $loginUserID;
     public $bodyId,$loginUserName,$loginOfficeName;
     public $bodyList = [];
     public $employeeList = [];
+    public $showViewMovementHistorydModal = false;
+    public $movementHistory;
     public function mount()
     {
         // Assign session value here
@@ -50,8 +53,7 @@ class Dashboard extends Component
         // Set the login username and office name
         $this->loginUserName    = session('user')['emp_name'].", ".session('user')['body_name'];
         $this->loginOfficeName  = session('user')['bodyid'];
-
-        //   dd(session('user')['user_id']);
+        $this->loginUserID      = session('user')['user_id'];
         //45320
     }
     public function render()
@@ -79,13 +81,22 @@ class Dashboard extends Component
             ->map(function ($meta) use ($loggedInUserId) {
                 $meta->created_by_name    = NoteTrackingMeta::fetchEmployeeById($meta->created_by);
                 $meta->latest_movement      = $meta->latestMovement;
+
+                $toUser = !empty($meta->latest_movement->to_user)? json_decode($meta->latest_movement->to_user, true):null;
+                $meta->toUser               = $toUser;
                 if ($meta->latest_movement && !empty($meta->latest_movement->to_user)  && $meta->current_status!=4) {
-                    $toUser = json_decode($meta->latest_movement->to_user, true);
-                    $meta->toUser               = $toUser;
-                    $meta->is_forward_to_me    = ($toUser['employee_id'] ?? null) == $loggedInUserId ? "Yes" : "No";
+                //   $meta->current_status==4 is closed
+                    $meta->is_forward_to_me    = ($toUser['employee_id'] ?? null) == $loggedInUserId  ? "Yes" : "No";
                 } else {
                     $meta->is_forward_to_me = "No";
                 }
+                if ($meta->latest_movement && !empty($meta->latest_movement->to_user) && $meta->latest_movement->current_status==1 && ($toUser['employee_id'] ?? null) == $loggedInUserId   && $meta->current_status!=4) {
+                //   $meta->current_status==4 is closed
+                    $meta->is_accept_req_to_me      =   "Yes" ;
+                } else {
+                    $meta->is_accept_req_to_me      =   "No";
+                }
+
                 if ($meta->movementHistory ) {
                     $meta->movementHistory = $meta->movementHistory->map(function ($movement) use ($loggedInUserId) {
                         $toUser = json_decode($movement->to_user, true);
@@ -99,12 +110,50 @@ class Dashboard extends Component
                 }
                 return $meta;
             });
-      //  dd($noteTrackingMeta);
+
         return view('dashboard',['myCreatedNotes'=>$myCreatedNotes,'forwardsNotesToMe'=>$forwardsNotesToMe,'noteTrackingMeta'=>$noteTrackingMeta]);
     }
 
-    public $showViewMovementHistorydModal = false;
-    public $movementHistory;
+    public function saveforward()
+    {
+       // dd($this->loginUserID);
+       // dd($this);
+        // Validation
+        $this->validate([
+            'forwardToOfficeID'     => 'required|integer',
+            'forwardToEmployee'     => 'required|integer',
+            'forwardMessage'        => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            $initiatedEmployeeInfo    = NoteTrackingMeta::fetchEmployeeById($this->loginUserID);
+            $forwardedEmployeeInfo    = NoteTrackingMeta::fetchEmployeeById($this->forwardToEmployee);
+            // Save movement or forward logic
+            NoteTrackingMovement::create([
+                'note_meta_id' => $this->note_meta_id,
+                'note_action'  => 'forwarded',
+                'from_user'    => (!empty($initiatedEmployeeInfo) ? json_encode($initiatedEmployeeInfo) : NULL), // or $this->initiatedBy
+                'to_user'      => (!empty($forwardedEmployeeInfo) ? json_encode($forwardedEmployeeInfo) : NULL),
+                'message'      => $this->forwardMessage,
+                'status'       => 'forwarded',
+                'is_active'    => 1,
+                'updated_by'   => $this->forwardToEmployee,
+                'updated_ip'   => request()->ip(),
+            ]);
+
+            session()->flash('message', 'Note forwarded successfully.');
+            $this->showForwardModal = false;
+            // Optional: Reset values and close modal via browser event
+            $this->reset(['forwardMessage', 'forwardToOfficeID', 'forwardToEmployee','note_meta_id']);
+            // $this->dispatchBrowserEvent('close-forward-modal');
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to forward note: ' . $e->getMessage());
+        }
+    }
+
+
+
     public function viewMovementHistoryFun($noteID='')
     {
         $this->showViewMovementHistorydModal=true;
@@ -199,4 +248,40 @@ class Dashboard extends Component
         $this->reset(['forwardMessage', 'forwardToOfficeID', 'forwardToEmployee','note_meta_id']);
         $this->showForwardModal = false;
     }
+
+    public function acceptNote($id,$movementId)
+    {
+        $meta = NoteTrackingMeta::with(['latestMovement' => function ($query) {
+            $query->where('is_active', 1);
+        }])->find($id);
+
+        if (!$meta) {
+            session()->flash('error', 'Note not found.');
+            return;
+        }
+
+        $toUserEmployeeInfo = NoteTrackingMeta::fetchEmployeeById($this->loginUserID);
+
+        NoteTrackingMeta::where('id', $id)->update([
+            'current_status' => 3,
+            'updated_by'     => initiatedBy(),
+            'updated_ip'     => request()->ip(),
+        ]);
+
+
+        NoteTrackingMovement::where(['id'=>$movementId,'note_meta_id' => $id])->update([
+//            right now id=2 it should be the latest movement id
+            'note_action'           => 'On Transit',
+            'receive_user'          => $toUserEmployeeInfo ? json_encode($toUserEmployeeInfo) : NULL,
+            'current_status'        => 2,
+            'status'                => 'On Transit',
+            'is_active'             => 1,
+            'updated_by'            => initiatedBy(),
+            'updated_ip'            => request()->ip(),
+        ]);
+
+        session()->flash('message', 'Note successfully closed.');
+    }
+
+
 }

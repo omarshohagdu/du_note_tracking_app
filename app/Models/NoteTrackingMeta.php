@@ -9,6 +9,7 @@ class NoteTrackingMeta extends Model
     protected $table = 'note_tracking_metas';
 
     protected $fillable = [
+        'type',
         'title',
         'reference_no',
         'current_status',

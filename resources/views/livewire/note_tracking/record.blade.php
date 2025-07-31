@@ -15,6 +15,7 @@
     <!-- Card 1: In Transit -->
     @if(!empty($noteTrackingMeta))
         @foreach($noteTrackingMeta as $note)
+{{--            {{ dd($note) }}--}}
             <div class="bg-white shadow-md rounded-2xl p-6 mb-6 border-l-4 border-orange-400">
                 <div class="flex justify-between items-start">
                     <div>

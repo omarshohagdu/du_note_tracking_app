@@ -25,11 +25,33 @@
                                         wire:click="viewMovementHistoryFun('{{ $note['id'] }}')">
                                     Movement History
                                 </button>
+
+                                @if(!empty($note['is_accept_req_to_me']) && $note['is_accept_req_to_me'] == 'Yes')
+                                    <div x-data="{ showConfirm: false }" class="inline-block">
+                                        <button type="button"
+                                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+                                                @click="showConfirm = true">
+                                            Accept
+                                        </button>
+                                        <div x-show="showConfirm" x-cloak
+                                             class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                                            <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm space-y-4">
+                                                <h2 class="text-lg font-semibold">Are you sure?</h2>
+                                                <p>Do you want to accept this note?</p>
+                                                <div class="flex justify-end gap-2">
+                                                    <button @click="showConfirm = false"
+                                                            class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+                                                    <button @click="$wire.acceptNote('{{ $note['id'] }}','{{ $note->latest_movement->id }}'); showConfirm = false"
+                                                            class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Yes, Accept</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+{{--                                {{ dd($note) }}--}}
                                 @if(!empty($note['is_forward_to_me']) && $note['is_forward_to_me'] == 'Yes')
                                     <button type="button" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
                                             wire:click="showForwardModalFun('{{ $note['id'] }}')">Forward</button>
-
-
 
                                     <div x-data="{ confirmClose: false, noteId: null }">
                                         <!-- Close Button -->

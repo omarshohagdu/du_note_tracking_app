@@ -43,6 +43,8 @@ return new class extends Migration
             $table->longText('note_action')->nullable();
             $table->longText('from_user')->nullable();
             $table->longText('to_user')->nullable();
+            $table->longText('receive_user')->nullable();
+            $table->longText('current_status')->nullable()->comment('1=waiting for received, 2=received, 3=another person received');
             $table->longText('message')->nullable();
             $table->Text('status')->nullable();
             $table->tinyInteger('is_active')->nullable();

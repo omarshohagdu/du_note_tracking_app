@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('type')->nullable();
             $table->string('title')->nullable();
             $table->string('reference_no')->nullable();
-            $table->integer('current_status')->nullable();
+            $table->integer('current_status')->nullable()->comment('1 = Created, 2 = On Transit, 3= Received, 4= Closed, 5= Temp. Received by Office, 6= Authorized Person Received');
             $table->tinyInteger('is_active')->nullable();
             $table->integer('created_by')->nullable();
             $table->string('created_ip')->nullable();

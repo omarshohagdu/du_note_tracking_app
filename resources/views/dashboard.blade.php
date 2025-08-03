@@ -2,7 +2,7 @@
     <div class="py-2">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <x-welcome :myCreatedNotes="$myCreatedNotes" :forwardsNotesToMe="$forwardsNotesToMe" />
+                <x-welcome :myCreatedNotes="$myCreatedNotes" :forwardsNotesToMe="$forwardsNotesToMe" :waitingAcceptedByme="$waitingAcceptedByme" />
 
                 @if(!empty($noteTrackingMeta))
                     @foreach($noteTrackingMeta as $note)

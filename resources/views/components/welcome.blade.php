@@ -10,7 +10,7 @@
 <div class="bg-gray-200 bg-opacity-25 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-6">
     <!-- Total Patients -->
     <div class="bg-white rounded-lg shadow p-6 text-center">
-        <a href="{{ route('patient.list') }}">
+        <a href="#">
             <h2 class="text-xl font-semibold text-gray-900 mb-2">
               Total  Created Notes
             </h2>
@@ -30,4 +30,13 @@
             {{ !empty($forwardsNotesToMe)?$forwardsNotesToMe:'0' }}
         </div>
     </div>
+    <div class="bg-white rounded-lg shadow p-6 text-center">
+        <h2 class="text-xl font-semibold text-gray-900 mb-2">
+            <a href="#"> Accepted Notes to me</a>
+        </h2>
+        <div class="text-3xl font-bold text-green-600">
+            {{ !empty($waitingAcceptedByme)?$waitingAcceptedByme:'0' }}
+        </div>
+    </div>
+
 </div>

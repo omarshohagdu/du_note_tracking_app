@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Http;
 class NoteTrackingMeta extends Model
 {
     protected $table = 'note_tracking_metas';
+    public const STATUS_ACTIVE = 1;
+
 
     protected $fillable = [
         'type',
@@ -52,5 +54,32 @@ class NoteTrackingMeta extends Model
 
         return $response->json()['data'] ?? null;
     }
+    public static function getNotesStatusCountByUser($currentStatus)
+    {
+        return static::
+        with([
+            'latestMovement'
+        ])
+            ->whereHas('latestMovement', function ($query) use ($currentStatus) {
+                $query->where('is_active', 1);
+                if ($currentStatus == 3) {
+                    $query->whereRaw('JSON_EXTRACT(receive_user, "$.employee_id") = ?', [session('user')['user_id']]);
+                }else{
+                    $query->whereRaw('JSON_EXTRACT(from_user, "$.employee_id") = ?', [session('user')['user_id']]);
+                }
+            })
+            ->where('is_active', static::STATUS_ACTIVE)
+            ->where('current_status', $currentStatus)
+            ->count();
+    }
+    public static function getActiveNotesCountByUser(int $userId,$currentStatus)
+    {
+        return static::where('is_active', static::STATUS_ACTIVE)
+            ->where('current_status', $currentStatus)
+            ->where('created_by', $userId)
+            ->count();
+    }
+
+
 
 }

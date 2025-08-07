@@ -3,7 +3,6 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <x-welcome :myCreatedNotes="$myCreatedNotes" :forwardsNotesToMe="$forwardsNotesToMe" :waitingAcceptedByme="$waitingAcceptedByme" />
-
                 @if(!empty($noteTrackingMeta))
                     @foreach($noteTrackingMeta as $note)
                         <div class="bg-white shadow-md rounded-2xl p-6 mb-6 border-l-4 border-orange-400 m-3">
@@ -182,16 +181,23 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 
                         {{-- Office Selector --}}
-                        <div>
+                        <div
+                                x-data="{ value: $wire.entangle('forwardToOfficeID') }"
+                                x-init="
+                                    let select = $el.querySelector('select');
+                                    $(select).select2().on('change', () => value = $(select).val());
+                                    $watch('value', val => $(select).val(val).trigger('change.select2'));
+                                "
+                                wire:ignore
+                        >
                             <label for="officeID" class="block text-sm font-medium text-gray-700 mb-1">
                                 Office/Dept./Institute
                             </label>
-
                             <select
                                     id="officeID"
-                                    wire:model="forwardToOfficeID"
+                                    wire:model.defer="forwardToOfficeID"
                                     onchange="changedBodyInfo()"
-                                    class="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    class="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 Select2"
                                     aria-label="Select Office"
                             >
                                 <option value="">-- Choose an Office --</option>
@@ -199,37 +205,34 @@
                                     <option value="{{ $key }}">{{ $body }}</option>
                                 @endforeach
                             </select>
-
                             @error('forwardToOfficeID')
-                            <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span>
+                                <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span>
                             @enderror
-
                         </div>
 
-                        {{-- Employee Selector --}}
-                        <div>
+                        <!-- Employee Selector -->
+                        <div
+                                x-data="{ value: $wire.entangle('forwardToEmployee') }"
+                                x-init="
+                                        let select = $el.querySelector('select');
+                                        $(select).select2().on('change', () => value = $(select).val());
+                                        $watch('value', val => $(select).val(val).trigger('change.select2'));
+                                    "
+                                wire:ignore
+                        >
                             <label for="forwardTo" class="block text-sm font-medium text-gray-700 mb-1">
                                 Employee Information
                             </label>
-
-                            <select
-                                    id="forwardTo"
-                                    wire:model="forwardToEmployee"
-                                    class="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    aria-label="Select Person to Forward To"
-                            >
+                            <select id="forwardTo" class="Select2 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm">
                                 <option value="">-- Choose a Person --</option>
-                                @if(!empty($employeeList))
-                                    @foreach($employeeList as $employee)
-                                        <option value="{{ $employee['employee_id'] }}">
-                                            {{ $employee['emp_name'] }} ({{ $employee['emp_id'] }} - {{ $employee['designation_title'] }})
-                                        </option>
-                                    @endforeach
-                                @endif
+                                @foreach($employeeList as $employee)
+                                    <option value="{{ $employee['employee_id'] }}">
+                                        {{ $employee['emp_name'] }} ({{ $employee['emp_id'] }} - {{ $employee['designation_title'] }})
+                                    </option>
+                                @endforeach
                             </select>
-
                             @error('forwardToEmployee')
-                            <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span>
+                                <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span>
                             @enderror
                         </div>
 
@@ -237,13 +240,33 @@
                 </div>
 
 
+
+
+
                 <div class="mb-4">
                     <label for="forwardMessage" class="block font-medium text-sm text-gray-700 mb-1">Message (Optional)</label>
                     <textarea id="forwardMessage" wire:model="forwardMessage" rows="3" class="w-full border border-gray-300 rounded-lg p-2" placeholder="Add a message for the recipient..."></textarea>
+                    @error('forwardMessage')
+                        <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span>
+                    @enderror
+                </div>
+                <div class="mb-4">
+                    @if ($errors->any())
+                        <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                            <ul class="list-disc pl-5">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                 </div>
 
-                <div class="flex justify-end gap-3">
 
+
+
+
+                <div class="flex justify-end gap-3">
                     <button
                             type="button"
                             wire:click="saveforward()"
@@ -256,5 +279,77 @@
                 </div>
             </div>
         </div>
+        @script
+            <script>
+                $(document).ready(function() {
+                    $('.Select2').select2();
+                });
+            </script>
+        @endscript
     @endif
+
 </div>
+
+<script>
+    window.addEventListener('show-success-alert', event => {
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: event.detail.message,
+            confirmButtonText: 'OK',
+            customClass: {
+                popup: 'bg-white dark:bg-gray-800 rounded-lg shadow-lg',
+                title: 'text-gray-900 dark:text-white',
+                content: 'text-gray-700 dark:text-gray-300',
+                confirmButton: 'bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg',
+            },
+        });
+    });
+
+    window.addEventListener('show-error-alert', event => {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: event.detail.message,
+            confirmButtonText: 'OK',
+            customClass: {
+                popup: 'bg-white dark:bg-gray-800 rounded-lg shadow-lg',
+                title: 'text-gray-900 dark:text-white',
+                content: 'text-gray-700 dark:text-gray-300',
+                confirmButton: 'bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg',
+            },
+        });
+    });
+    function changedBodyInfo() {
+        const officeID = document.getElementById('officeID').value;
+        const forwardTo = document.getElementById('forwardTo');
+
+        if (!officeID) {
+            forwardTo.innerHTML = '<option value="">-- Choose a Person --</option>';
+            return;
+        }else{
+            forwardTo.innerHTML = '<option value="">Loading employees...</option>';
+        }
+
+        fetch(`/get-employees/${officeID}`)
+            .then(response => response.json())
+            .then(result => {
+                if (result.status === 'success' && Array.isArray(result.data)) {
+                    let options = '<option value="">-- Choose a Person --</option>';
+                    result.data.forEach(emp => {
+                        options += `<option value="${emp.employee_id}">${emp.emp_name} (${emp.emp_id} - ${emp.designation_title})</option>`;
+                    });
+                    forwardTo.innerHTML = options;
+                } else {
+                    forwardTo.innerHTML = '<option value="">No employees found</option>';
+                }
+            })
+            .catch(error => {
+
+                forwardTo.innerHTML = '<option value="">Error loading employees</option>';
+            });
+    }
+</script>
+
+
+

@@ -104,59 +104,69 @@ class Dashboard extends Component
         return view('dashboard',['myCreatedNotes'=>$myCreatedNotes,'forwardsNotesToMe'=>$forwardsNotesToMe,'noteTrackingMeta'=>$noteTrackingMeta,'waitingAcceptedByme'=>$waitingAcceptedByme]);
     }
 
+    public $forwardMessage,$forwardToOfficeID,$forwardToEmployee;
+    public $showForwardModal = false;
+    public $note_meta_id,$noteLastMovementID;
+    public $noteTitle;
+    public $referenceNo;
+
     public function saveforward()
     {
-       // dd($this);
-        // Validation
+
         $this->validate([
-            'forwardToOfficeID'     => 'required|integer',
-            'forwardToEmployee'     => 'required|integer',
-            'forwardMessage'        => 'nullable|string|max:1000',
+            'forwardToOfficeID' => 'required|integer',
+            'forwardToEmployee' => 'required|integer',
+            'forwardMessage' => 'nullable|string|max:1000',
+        ], [
+            'forwardToOfficeID.required' => 'Please select an office.',
+            'forwardToOfficeID.integer' => 'The office selection is invalid.',
+            'forwardToEmployee.required' => 'Please select an employee.',
+            'forwardToEmployee.integer' => 'The employee selection is invalid.',
+            'forwardMessage.string' => 'The message must be a valid text.',
+            'forwardMessage.max' => 'The message cannot exceed 1000 characters.',
         ]);
 
         try {
-            $initiatedEmployeeInfo    = NoteTrackingMeta::fetchEmployeeById($this->loginUserID);
-            $forwardedEmployeeInfo    = NoteTrackingMeta::fetchEmployeeById($this->forwardToEmployee);
-            // Save movement or forward logic
+            // Existing logic
+            $initiatedEmployeeInfo = NoteTrackingMeta::fetchEmployeeById($this->loginUserID);
+            $forwardedEmployeeInfo = NoteTrackingMeta::fetchEmployeeById($this->forwardToEmployee);
 
             NoteTrackingMeta::where('id', $this->note_meta_id)->update([
-                'current_status' => 2, // On Transit
-                'updated_by'     => $this->forwardToEmployee,
-                'updated_ip'     => request()->ip(),
+                'current_status' => 2,
+                'updated_by' => $this->forwardToEmployee,
+                'updated_ip' => request()->ip(),
             ]);
 
-
-            NoteTrackingMovement::where(['id'=>$this->noteLastMovementID,'note_meta_id' => $this->note_meta_id])->update([
-                'note_action'           => 'On Transit',
-                'receive_user'          => $initiatedEmployeeInfo ? json_encode($initiatedEmployeeInfo) : NULL,
-                'current_status'        => 2,
-                'status'                => 'On Transit',
-                'is_active'             => 1,
-                'updated_by'            => $this->forwardToEmployee,
-                'updated_ip'            => request()->ip(),
+            NoteTrackingMovement::where(['id' => $this->noteLastMovementID, 'note_meta_id' => $this->note_meta_id])->update([
+                'note_action' => 'On Transit',
+                'receive_user' => $initiatedEmployeeInfo ? json_encode($initiatedEmployeeInfo) : null,
+                'current_status' => 2,
+                'status' => 'On Transit',
+                'is_active' => 1,
+                'updated_by' => $this->forwardToEmployee,
+                'updated_ip' => request()->ip(),
             ]);
-
 
             NoteTrackingMovement::create([
                 'note_meta_id' => $this->note_meta_id,
-                'note_action'  => 'forwarded',
-                'from_user'    => (!empty($initiatedEmployeeInfo) ? json_encode($initiatedEmployeeInfo) : NULL), // or $this->initiatedBy
-                'to_user'      => (!empty($forwardedEmployeeInfo) ? json_encode($forwardedEmployeeInfo) : NULL),
-                'current_status'=> 1,
-                'message'      => $this->forwardMessage,
-                'status'       => 'forwarded',
-                'is_active'    => 1,
-                'created_by'   => $this->forwardToEmployee,
-                'updated_ip'   => request()->ip(),
+                'note_action' => 'forwarded',
+                'from_user' => $initiatedEmployeeInfo ? json_encode($initiatedEmployeeInfo) : null,
+                'to_user' => $forwardedEmployeeInfo ? json_encode($forwardedEmployeeInfo) : null,
+                'current_status' => 1,
+                'message' => $this->forwardMessage,
+                'status' => 'forwarded',
+                'is_active' => 1,
+                'created_by' => $this->forwardToEmployee,
+                'updated_ip' => request()->ip(),
             ]);
-            session()->flash('message', 'Note forwarded successfully.');
-            $this->showForwardModal = false;
-            // Optional: Reset values and close modal via browser event
-            $this->reset(['forwardMessage', 'forwardToOfficeID', 'forwardToEmployee','note_meta_id']);
-            // $this->dispatchBrowserEvent('close-forward-modal');
 
+            // Trigger SweetAlert2
+            $this->reset(['forwardMessage', 'forwardToOfficeID', 'forwardToEmployee', 'note_meta_id']);
+            $this->showForwardModal = false;
+            $this->dispatch('show-success-alert', message: 'Note forwarded successfully.');
         } catch (\Exception $e) {
-            session()->flash('error', 'Failed to forward note: ' . $e->getMessage());
+//            session()->flash('error', 'Failed to forward note: ' . $e->getMessage());
+            $this->dispatch('show-error-alert', message: 'Failed to forward note: ' . $e->getMessage());
         }
     }
 
@@ -212,15 +222,10 @@ class Dashboard extends Component
         }
     }
 
-    public $forwardMessage,$forwardToOfficeID,$forwardToEmployee;
-    public $showForwardModal = false;
-    public $note_meta_id,$noteLastMovementID;
-    public $noteTitle;
-    public $referenceNo;
+
     public function showForwardModalFun($id)
     {
         $this->resetValidation(['forwardToOfficeID', 'forwardToEmployee']);
-
 
         $noteTrackingMeta = NoteTrackingMeta::with([
             'content',
@@ -244,7 +249,7 @@ class Dashboard extends Component
             $this->noteTitle            =   $noteTrackingMeta->title;
             $this->referenceNo          =   $noteTrackingMeta->reference_no;
             $this->noteLastMovementID   =   $noteTrackingMeta->latestMovement->id;
-            $this->forwardToOfficeID    =   session('user')['body_id'];;
+            $this->forwardToOfficeID    =   session('user')['body_id'];
             $this->showForwardModal = true;
         }
         else {
@@ -289,6 +294,11 @@ class Dashboard extends Component
 
         session()->flash('message', 'Note successfully closed.');
     }
+    protected function getListeners()
+    {
+        return ['refreshSelect2' => '$refresh'];
+    }
+
 
 
 }

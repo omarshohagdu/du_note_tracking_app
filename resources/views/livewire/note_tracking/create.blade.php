@@ -7,7 +7,7 @@
                     <h2 class="text-2xl font-bold mb-6">Create Note Information</h2>
                 </div>
                 <div class="text-right">
-                    <x-nav-link :href="route('notes.record')" :active="request()->routeIs('patient.list')"
+                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')"
                                 class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded  inline-block">
                         {{ __(' Record') }}
                     </x-nav-link>
@@ -82,3 +82,40 @@
         </div>
     </div>
 </div>
+<script>
+    Livewire.on('clear-note-fields', () => {
+        document.getElementById('noteTitle').value = '';
+        document.getElementById('noteRefNo').value = '';
+        document.getElementById('noteContent').value = '';
+    });
+
+    window.addEventListener('show-success-alert', event => {
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: event.detail.message,
+            confirmButtonText: 'OK',
+            customClass: {
+                popup: 'bg-white dark:bg-gray-800 rounded-lg shadow-lg',
+                title: 'text-gray-900 dark:text-white',
+                content: 'text-gray-700 dark:text-gray-300',
+                confirmButton: 'bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg',
+            },
+        });
+    });
+
+    window.addEventListener('show-error-alert', event => {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: event.detail.message,
+            confirmButtonText: 'OK',
+            customClass: {
+                popup: 'bg-white dark:bg-gray-800 rounded-lg shadow-lg',
+                title: 'text-gray-900 dark:text-white',
+                content: 'text-gray-700 dark:text-gray-300',
+                confirmButton: 'bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg',
+            },
+        });
+    });
+</script>

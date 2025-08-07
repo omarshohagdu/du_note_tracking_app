@@ -71,6 +71,10 @@ class NoteTracking extends Component
             return session()->flash('error', 'Initiated by field is required.');
 
         }
+
+        $this->resetErrorBag(); // Optional: reset errors on re-submit
+        $this->resetValidation();
+
         $this->validate([
             'noteTitle' => 'required|string|max:255',
             'noteRefNo' => 'required|string|max:255',
@@ -112,9 +116,11 @@ class NoteTracking extends Component
             ]);
 
             DB::commit();
-
-            session()->flash('message', 'Note successfully created with movement log!');
             $this->reset(['noteTitle', 'noteRefNo', 'noteContent']);
+            $this->dispatch('clear-note-fields');
+          //  session()->flash('message', 'Note successfully created with movement log!');
+            $this->dispatch('show-success-alert', message: 'Note successfully created with movement log!');
+
 
         } catch (\Exception $e) {
             DB::rollBack();

@@ -125,19 +125,70 @@ class NoteTrackingRecord extends Component
 
     public $forwardMessage,$forwardToOfficeID,$forwardToEmployee;
     public $showForwardModal = false;
-    public $note_meta_id;
+    public $note_meta_id,$noteLastMovementID;
     public $noteTitle;
     public $referenceNo;
 
     public function saveforward()
     {
-        // Validation
+
         $this->validate([
-            'forwardToOfficeID'     => 'required|integer',
-            'forwardToEmployee'     => 'required|integer',
-            'forwardMessage'        => 'nullable|string|max:1000',
+            'forwardToOfficeID' => 'required|integer',
+            'forwardToEmployee' => 'required|integer',
+            'forwardMessage' => 'nullable|string|max:1000',
+        ], [
+            'forwardToOfficeID.required' => 'Please select an office.',
+            'forwardToOfficeID.integer' => 'The office selection is invalid.',
+            'forwardToEmployee.required' => 'Please select an employee.',
+            'forwardToEmployee.integer' => 'The employee selection is invalid.',
+            'forwardMessage.string' => 'The message must be a valid text.',
+            'forwardMessage.max' => 'The message cannot exceed 1000 characters.',
         ]);
 
+        try {
+            // Existing logic
+            $initiatedEmployeeInfo = NoteTrackingMeta::fetchEmployeeById($this->initiatedBy);
+            $forwardedEmployeeInfo = NoteTrackingMeta::fetchEmployeeById($this->forwardToEmployee);
+
+            NoteTrackingMeta::where('id', $this->note_meta_id)->update([
+                'current_status' => 2,
+                'updated_by' => $this->forwardToEmployee,
+                'updated_ip' => request()->ip(),
+            ]);
+
+            NoteTrackingMovement::where(['id' => $this->noteLastMovementID, 'note_meta_id' => $this->note_meta_id])->update([
+                'note_action' => 'On Transit',
+                'receive_user' => $initiatedEmployeeInfo ? json_encode($initiatedEmployeeInfo) : null,
+                'current_status' => 2,
+                'status' => 'On Transit',
+                'is_active' => 1,
+                'updated_by' => $this->forwardToEmployee,
+                'updated_ip' => request()->ip(),
+            ]);
+
+            NoteTrackingMovement::create([
+                'note_meta_id' => $this->note_meta_id,
+                'note_action' => 'forwarded',
+                'from_user' => $initiatedEmployeeInfo ? json_encode($initiatedEmployeeInfo) : null,
+                'to_user' => $forwardedEmployeeInfo ? json_encode($forwardedEmployeeInfo) : null,
+                'current_status' => 1,
+                'message' => $this->forwardMessage,
+                'status' => 'forwarded',
+                'is_active' => 1,
+                'created_by' => $this->forwardToEmployee,
+                'updated_ip' => request()->ip(),
+            ]);
+
+            // Trigger SweetAlert2
+            $this->reset(['forwardMessage', 'forwardToOfficeID', 'forwardToEmployee', 'note_meta_id']);
+            $this->showForwardModal = false;
+            $this->dispatch('show-success-alert', message: 'Note forwarded successfully.');
+        } catch (\Exception $e) {
+//            session()->flash('error', 'Failed to forward note: ' . $e->getMessage());
+            $this->dispatch('show-error-alert', message: 'Failed to forward note: ' . $e->getMessage());
+        }
+
+        /*
         try {
             $initiatedEmployeeInfo    = NoteTrackingMeta::fetchEmployeeById($this->initiatedBy);
             $forwardedEmployeeInfo    = NoteTrackingMeta::fetchEmployeeById($this->forwardToEmployee);
@@ -164,6 +215,7 @@ class NoteTrackingRecord extends Component
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to forward note: ' . $e->getMessage());
         }
+        */
     }
 
 
@@ -172,20 +224,34 @@ class NoteTrackingRecord extends Component
     {
         $this->resetValidation(['forwardToOfficeID', 'forwardToEmployee']);
 
-
-        $noteTrackingMeta = NoteTrackingMeta::select('note_tracking_metas.*')
+        $noteTrackingMeta = NoteTrackingMeta::with([
+            'content',
+            'latestMovement' => function ($query) {
+                $query->where('is_active', 1);
+            }
+        ])
             ->where('note_tracking_metas.is_active', 1)
             ->orderBy('note_tracking_metas.created_at', 'desc')
             ->where('note_tracking_metas.id', $id)
             ->first();
+
+
         if ($noteTrackingMeta) {
-            $this->note_meta_id = $noteTrackingMeta->id;
-            $this->noteTitle = $noteTrackingMeta->title;
-            $this->referenceNo = $noteTrackingMeta->reference_no;
-            $this->forwardToOfficeID =  session('user')['body_id'];;
+            $toUser = !empty($noteTrackingMeta->latestMovement->to_user)? json_decode($noteTrackingMeta->latestMovement->to_user, true):null;
+            $this->loginUserName =
+                ($toUser['emp_name'] ?? NULL) .
+                " (" . ($toUser['designation_en'] ?? NULL) .
+                "), " . ($toUser['dept_office_name'] ?? NULL);
+            $this->note_meta_id         =   $noteTrackingMeta->id;
+            $this->noteTitle            =   $noteTrackingMeta->title;
+            $this->referenceNo          =   $noteTrackingMeta->reference_no;
+            $this->noteLastMovementID   =   $noteTrackingMeta->latestMovement->id;
+            $this->forwardToOfficeID    =   session('user')['body_id'];
             $this->showForwardModal = true;
         }
-        //dd($noteTrackingMeta);
+        else {
+            session()->flash('error', 'Note not found.');
+        }
     }
 
     public  function closeForwardModalFun()

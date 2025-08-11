@@ -28,13 +28,15 @@
                         <div>
                             <label class="block text-gray-700 font-medium mb-1">Note Type</label>
                             <label class="mr-5 inline-flex items-center">
-                                <input type="radio" wire:model="noteType" value="online" class="form-radio text-blue-600">
+                                <input type="radio" wire:model.live="noteType" wire:click="ToggleNoteType('online')" value="online" id="online" class="noteTypeClass" >
                                 <span class="ml-2">Online Note</span>
                             </label>
                             <label class="inline-flex items-center">
-                                <input type="radio" wire:model="noteType" value="offline" class="form-radio text-blue-600">
+                                <input type="radio" wire:model.live="noteType" wire:click="ToggleNoteType('offline')" value="offline" id="offline" class="noteTypeClass">
                                 <span class="ml-2">Offline Note</span>
                             </label>
+                            <br/>
+                            @error('noteType') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                         </div>
 
                         <div>
@@ -43,7 +45,9 @@
                                 <option value="">-- Choose a Person --</option>
                                 @if(!empty($employeeList))
                                     @foreach($employeeList as $employee)
-                                        <option value="{{ $employee['employee_id'] }}">{{ $employee['emp_name'] }} ({{ $employee['emp_id'] }} - {{ $employee['designation_title'] }})</option>
+                                        <option value="{{ $employee['employee_id'] }}">
+                                            {{ $employee['emp_name'] }} ({{ $employee['emp_id'] }} - {{ $employee['designation_title'] }})
+                                        </option>
                                     @endforeach
                                 @endif
                             </select>
@@ -51,7 +55,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 ">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
                             <label for="noteTitle" class="text-gray-700 font-medium mb-1">Note Title</label>
                             <input type="text" id="noteTitle" wire:model="noteTitle" class="w-full px-4 py-2 border rounded shadow-sm focus:ring-blue-500" placeholder="Enter note title">
@@ -64,19 +68,21 @@
                         </div>
                     </div>
 
-                    <div>
-                        <label for="noteContent" class="text-gray-700 font-medium mb-1">Note Body</label>
+                    {{-- Online Note --}}
+                    <div class="{{ $noteType === 'online' ? '' : 'hidden' }}">
+                        <label for="noteContent" class="text-gray-700 font-medium mb-1">Note Body (Online)</label>
                         <textarea id="noteContent" wire:model="noteContent" rows="5" class="w-full px-4 py-2 border rounded shadow-sm focus:ring-blue-500" placeholder="Enter note body here..."></textarea>
                         @error('noteContent') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                     </div>
 
+
                     <div class="flex gap-4 mt-6">
                         <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Create Note</button>
-                        <button type="button" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition" onclick="alert('Preview not implemented yet!')">Preview</button>
+                        <button type="button" wire:click="resetCreateNoteForm" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition">Reset</button>
+
                     </div>
-
-
                 </form>
+
 
             </div>
         </div>
@@ -84,8 +90,29 @@
 </div>
 <script>
     Livewire.on('clear-note-fields', () => {
+        const radios = document.getElementsByClassName('noteTypeClass');
+        for (let i = 0; i < radios.length; i++) {
+            radios[i].checked = false;
+        }
+
         document.getElementById('noteTitle').value = '';
         document.getElementById('noteRefNo').value = '';
+        document.getElementById('noteContent').value = '';
+    });
+    Livewire.on('clear-note-type-fields', () => {
+        const radios = document.getElementsByClassName('noteTypeClass');
+
+        for(let i = 0; i < radios.length; i++) {
+            radios[i].addEventListener('click', function() {
+                const clickedValue = this.value;
+
+                for(let j = 0; j < radios.length; j++) {
+                    if(radios[j].value !== clickedValue) {
+                        radios[j].checked = false; // uncheck other radios
+                    }
+                }
+            });
+        }
         document.getElementById('noteContent').value = '';
     });
 

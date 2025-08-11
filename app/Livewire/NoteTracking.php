@@ -15,7 +15,7 @@ class NoteTracking extends Component
 {
     public $bodyId,$accessToken,$url,$secretKey;
 
-    public $noteType = 'online';
+    public string $noteType = '';
     public $initiatedBy;
     public $noteTitle,$noteRefNo,$noteContent;
     public $employeeList = [];
@@ -67,19 +67,25 @@ class NoteTracking extends Component
             session()->flash('error', 'Session expired, please login again.');
             return redirect()->route('api.login');
         }
-        if (empty($this->initiatedBy)) {
-            return session()->flash('error', 'Initiated by field is required.');
 
-        }
 
         $this->resetErrorBag(); // Optional: reset errors on re-submit
         $this->resetValidation();
 
         $this->validate([
-            'noteTitle' => 'required|string|max:255',
-            'noteRefNo' => 'required|string|max:255',
-            'noteContent' => 'required|string',
-            'initiatedBy' => 'required|numeric',
+            'noteType'          => 'required|string',
+            'noteTitle'         => 'required|string|max:255',
+            'noteRefNo'         => 'required|string|max:255',
+            'noteContent'       => 'nullable|string|max:1000',
+            'initiatedBy'       => 'required|numeric',
+        ], [
+            'noteType.required' => 'Note Type is required.',
+            'noteTitle.required' => 'Note Title is required.',
+            'noteRefNo.required' => 'The Note Reference Number is required.',
+            'initiatedBy.required' => 'The Initiated by is required.',
+
+            'noteContent.string' => 'The message must be a valid text.',
+            'noteContent.max' => 'The message cannot exceed 1000 characters.',
         ]);
 
         DB::beginTransaction();
@@ -116,7 +122,7 @@ class NoteTracking extends Component
             ]);
 
             DB::commit();
-            $this->reset(['noteTitle', 'noteRefNo', 'noteContent']);
+            $this->reset(['noteType','noteTitle', 'noteRefNo', 'noteContent']);
             $this->dispatch('clear-note-fields');
           //  session()->flash('message', 'Note successfully created with movement log!');
             $this->dispatch('show-success-alert', message: 'Note successfully created with movement log!');
@@ -127,5 +133,18 @@ class NoteTracking extends Component
             session()->flash('error', 'Something went wrong! ' . $e->getMessage());
         }
     }
+    public function ToggleNoteType($type){
+        $this->dispatch('clear-note-type-fields');
+        $this->reset([ 'noteContent']);
+        $this->noteType = $type;
+    }
+
+    public function resetCreateNoteForm(){
+        $this->resetErrorBag(); // Optional: reset errors on re-submit
+        $this->resetValidation();
+        $this->reset(['noteType','noteTitle', 'noteRefNo', 'noteContent']);
+        $this->dispatch('clear-note-fields');
+    }
+
 
 }

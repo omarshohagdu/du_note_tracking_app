@@ -12,67 +12,66 @@
     @endif
 
 
-    <!-- Card 1: In Transit -->
-    @if(!empty($noteTrackingMeta))
-        @foreach($noteTrackingMeta as $note)
-{{--            {{ dd($note) }}--}}
-            <div class="bg-white shadow-md rounded-2xl p-6 mb-6 border-l-4 border-orange-400">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-800">{{ $note['title'] }}</h3>
-                        <p class="text-sm text-gray-500"><strong>Serial:</strong> {{ $note['reference_no']??NULL }}</p>
-                        <p class="text-sm text-gray-500">Created: {{ formatDate($note['created_at']) }} | Type: {{ $note['type'] }}</p>
+    <div class="h-screen overflow-y-auto">
+        @if(!empty($noteTrackingMeta))
+            @foreach($noteTrackingMeta as $note)
+                <div class="bg-white shadow-md rounded-2xl p-6 mb-6 border-l-4 border-orange-400">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800">{{ $note['title'] }}</h3>
+                            <p class="text-sm text-gray-500"><strong>Serial:</strong> {{ $note['reference_no']??NULL }}</p>
+                            <p class="text-sm text-gray-500">Created: {{ formatDate($note['created_at']) }} | Type: {{ $note['type'] }}</p>
+                        </div>
+                        <span class="bg-orange-100 text-orange-600 text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
+                            {{ $note->latestMovement->status??NULL }}
+                        </span>
                     </div>
-                    <span class="bg-orange-100 text-orange-600 text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
-                        {{ $note->latestMovement->status??NULL }}
-                    </span>
-                </div>
-                <p class="text-gray-700 mt-4">
-                    {{ $note['description'] }}
-                </p>
-                <div class="mt-4 flex gap-4">
-                    <button type="button" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
-                            wire:click="viewMovementHistoryFun('{{ $note['id'] }}')">
-                        Movement History
-                    </button>
-                    @if(!empty($note['is_assigned_to_me']) && $note['is_assigned_to_me'] == 'Yes')
-                        <button type="button" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
-                            wire:click="showForwardModalFun('{{ $note['id'] }}')">Forward</button>
+                    <p class="text-gray-700 mt-4">
+                        {{ $note['description'] }}
+                    </p>
+                    <div class="mt-4 flex gap-4">
+                        <button type="button" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
+                                wire:click="viewMovementHistoryFun('{{ $note['id'] }}')">
+                            Movement History
+                        </button>
+                        @if(!empty($note['is_assigned_to_me']) && $note['is_assigned_to_me'] == 'Yes')
+                            <button type="button" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+                                wire:click="showForwardModalFun('{{ $note['id'] }}')">Forward</button>
 
 
 
-                        <div x-data="{ confirmClose: false, noteId: null }">
-                            <!-- Close Button -->
-                            <button
-                                    type="button"
-                                    @click="confirmClose = true; noteId = '{{ $note['id'] }}'"
-                                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">
-                                Close
-                            </button>
+                            <div x-data="{ confirmClose: false, noteId: null }">
+                                <!-- Close Button -->
+                                <button
+                                        type="button"
+                                        @click="confirmClose = true; noteId = '{{ $note['id'] }}'"
+                                        class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">
+                                    Close
+                                </button>
 
-                            <!-- Confirmation Modal -->
-                            <div x-show="confirmClose" x-cloak
-                                 class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                                <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm space-y-4">
-                                    <h2 class="text-lg font-semibold">Are you sure?</h2>
-                                    <p>This action cannot be changed.</p>
-                                    <div class="flex justify-end gap-2">
-                                        <button @click="confirmClose = false"
-                                                class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
-                                        <button @click="$wire.closeNoteModalFun(noteId); confirmClose = false"
-                                                class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Yes, Close</button>
+                                <!-- Confirmation Modal -->
+                                <div x-show="confirmClose" x-cloak
+                                     class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                                    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm space-y-4">
+                                        <h2 class="text-lg font-semibold">Are you sure?</h2>
+                                        <p>This action cannot be changed.</p>
+                                        <div class="flex justify-end gap-2">
+                                            <button @click="confirmClose = false"
+                                                    class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+                                            <button @click="$wire.closeNoteModalFun(noteId); confirmClose = false"
+                                                    class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Yes, Close</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
 
-                    @endif
+                        @endif
+                    </div>
                 </div>
-            </div>
-        @endforeach
-    @endif
-
+            @endforeach
+        @endif
+    </div>
 
 
 
@@ -107,67 +106,77 @@
                     Forward To
                 </label>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            </div>
+            <div class="mb-4"
+                 x-data="{ value: $wire.entangle('forwardToOfficeID') }"
+                 x-init="
+                            let select = $el.querySelector('select');
+                            $(select).select2().on('change', () => value = $(select).val());
+                            $watch('value', val => $(select).val(val).trigger('change.select2'));
+                        "
+                 wire:ignore
+            >
+                <label for="officeID" class="block text-sm font-medium text-gray-700 mb-1">
+                    Office/Dept./Institute
+                </label>
+                <select
+                        id="officeID"
+                        wire:model.defer="forwardToOfficeID"
+                        onchange="changedBodyInfo()"
+                        class="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 Select2"
+                        aria-label="Select Office"
+                >
+                    <option value="">-- Choose an Office --</option>
+                    @foreach($bodyList as $key => $body)
+                        <option value="{{ $key }}" {{ $forwardToOfficeID==$key?'selected':'' }}>{{ $body }}</option>
+                    @endforeach
+                </select>
+                @error('forwardToOfficeID')
+                <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span>
+                @enderror
+            </div>
 
-                    {{-- Office Selector --}}
-                    <div>
-                        <label for="officeID" class="block text-sm font-medium text-gray-700 mb-1">
-                            Office/Dept./Institute
-                        </label>
-
-                        <select
-                                id="officeID"
-                                wire:model="forwardToOfficeID"
-                                onchange="changedBodyInfo()"
-                                class="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                aria-label="Select Office"
-                        >
-                            <option value="">-- Choose an Office --</option>
-                            @foreach($bodyList as $key => $body)
-                                <option value="{{ $key }}">{{ $body }}</option>
-                            @endforeach
-                        </select>
-
-                        @error('forwardToOfficeID')
-                            <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span>
-                        @enderror
-
-                    </div>
-
-                    {{-- Employee Selector --}}
-                    <div>
-                        <label for="forwardTo" class="block text-sm font-medium text-gray-700 mb-1">
-                            Employee Information
-                        </label>
-
-                        <select
-                                id="forwardTo"
-                                wire:model="forwardToEmployee"
-                                class="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                aria-label="Select Person to Forward To"
-                        >
-                            <option value="">-- Choose a Person --</option>
-                            @if(!empty($employeeList))
-                                @foreach($employeeList as $employee)
-                                    <option value="{{ $employee['employee_id'] }}">
-                                        {{ $employee['emp_name'] }} ({{ $employee['emp_id'] }} - {{ $employee['designation_title'] }})
-                                    </option>
-                                @endforeach
-                            @endif
-                        </select>
-
-                        @error('forwardToEmployee')
-                            <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span>
-                        @enderror
-                    </div>
-
-                </div>
+            <!-- Employee Selector -->
+            <div class="mb-4"
+                 x-data="{ value: $wire.entangle('forwardToEmployee') }"
+                 x-init="
+                                let select = $el.querySelector('select');
+                                $(select).select2().on('change', () => value = $(select).val());
+                                $watch('value', val => $(select).val(val).trigger('change.select2'));
+                            "
+                 wire:ignore
+            >
+                <label for="forwardTo" class="block text-sm font-medium text-gray-700 mb-1">
+                    Employee Information
+                </label>
+                <select id="forwardTo" class="Select2 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm">
+                    <option value="">-- Choose a Person --</option>
+                    @foreach($employeeList as $employee)
+                        <option value="{{ $employee['employee_id'] }}">
+                            {{ $employee['emp_name'] }} ({{ $employee['emp_id'] }} - {{ $employee['designation_title'] }})
+                        </option>
+                    @endforeach
+                </select>
+                @error('forwardToEmployee')
+                <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span>
+                @enderror
             </div>
 
 
             <div class="mb-4">
                 <label for="forwardMessage" class="block font-medium text-sm text-gray-700 mb-1">Message (Optional)</label>
                 <textarea id="forwardMessage" wire:model="forwardMessage" rows="3" class="w-full border border-gray-300 rounded-lg p-2" placeholder="Add a message for the recipient..."></textarea>
+            </div>
+            <div class="mb-4">
+                @if ($errors->any())
+                    <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                        <ul class="list-disc pl-5">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
             </div>
 
             <div class="flex justify-end gap-3">
@@ -184,6 +193,13 @@
             </div>
         </div>
     </div>
+    @script
+        <script>
+            $(document).ready(function() {
+                $('.Select2').select2();
+            });
+        </script>
+    @endscript
     @endif
 
     <!-- Movement History Modal -->
@@ -250,6 +266,35 @@
 </div>
 
 <script>
+    window.addEventListener('show-success-alert', event => {
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: event.detail.message,
+            confirmButtonText: 'OK',
+            customClass: {
+                popup: 'bg-white dark:bg-gray-800 rounded-lg shadow-lg',
+                title: 'text-gray-900 dark:text-white',
+                content: 'text-gray-700 dark:text-gray-300',
+                confirmButton: 'bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg',
+            },
+        });
+    });
+
+    window.addEventListener('show-error-alert', event => {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: event.detail.message,
+            confirmButtonText: 'OK',
+            customClass: {
+                popup: 'bg-white dark:bg-gray-800 rounded-lg shadow-lg',
+                title: 'text-gray-900 dark:text-white',
+                content: 'text-gray-700 dark:text-gray-300',
+                confirmButton: 'bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg',
+            },
+        });
+    });
     function changedBodyInfo() {
         const officeID = document.getElementById('officeID').value;
         const forwardTo = document.getElementById('forwardTo');

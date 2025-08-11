@@ -3,86 +3,89 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <x-welcome :myCreatedNotes="$myCreatedNotes" :forwardsNotesToMe="$forwardsNotesToMe" :waitingAcceptedByme="$waitingAcceptedByme" />
-                @if(!empty($noteTrackingMeta))
-                    @foreach($noteTrackingMeta as $note)
-                        <div class="bg-white shadow-md rounded-2xl p-6 mb-6 border-l-4 border-orange-400 m-3">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h3 class="text-lg font-semibold text-gray-800">{{ $note['title'] }}</h3>
-                                    <p class="text-sm text-gray-500"><strong>Serial:</strong> {{ $note['reference_no']??NULL }}</p>
-                                    <p class="text-sm text-gray-500">Created: {{ formatDate($note['created_at']) }} | Type: {{ $note['type'] }}</p>
-                                </div>
-                                <span class="bg-orange-100 text-orange-600 text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
+                <div class="max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-orange-400 scrollbar-track-gray-100 ">
+                    @if(!empty($noteTrackingMeta))
+                        @foreach($noteTrackingMeta as $note)
+                            <div class="bg-white shadow-md rounded-2xl p-6 mb-6 border-l-4 border-orange-400 m-3">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-800">{{ $note['title'] }}</h3>
+                                        <p class="text-sm text-gray-500"><strong>Serial:</strong> {{ $note['reference_no']??NULL }}</p>
+                                        <p class="text-sm text-gray-500">Created: {{ formatDate($note['created_at']) }} | Type: {{ $note['type'] }}</p>
+                                    </div>
+                                    <span class="bg-orange-100 text-orange-600 text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
                                     {{ $note->latestMovement->status??NULL }}
                                 </span>
-                            </div>
-                            <p class="text-gray-700 mt-4">
-                                {{ $note['description'] }}
-                            </p>
-                            <div class="mt-4 flex gap-4">
-                                <button type="button" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
-                                        wire:click="viewMovementHistoryFun('{{ $note['id'] }}')">
-                                    Movement History
-                                </button>
+                                </div>
+                                <p class="text-gray-700 mt-4">
+                                    {{ $note['description'] }}
+                                </p>
+                                <div class="mt-4 flex gap-4">
+                                    <button type="button" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
+                                            wire:click="viewMovementHistoryFun('{{ $note['id'] }}')">
+                                        Movement History
+                                    </button>
 
-                                @if(!empty($note['is_accept_req_to_me']) && $note['is_accept_req_to_me'] == 'Yes')
-                                    <div x-data="{ showConfirm: false }" class="inline-block">
-                                        <button type="button"
-                                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
-                                                @click="showConfirm = true">
-                                            Accept
-                                        </button>
-                                        <div x-show="showConfirm" x-cloak
-                                             class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                                            <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm space-y-4">
-                                                <h2 class="text-lg font-semibold">Are you sure?</h2>
-                                                <p>Do you want to accept this note?</p>
-                                                <div class="flex justify-end gap-2">
-                                                    <button @click="showConfirm = false"
-                                                            class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
-                                                    <button @click="$wire.acceptNote('{{ $note['id'] }}','{{ $note->latest_movement->id }}'); showConfirm = false"
-                                                            class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Yes, Accept</button>
+                                    @if(!empty($note['is_accept_req_to_me']) && $note['is_accept_req_to_me'] == 'Yes')
+                                        <div x-data="{ showConfirm: false }" class="inline-block">
+                                            <button type="button"
+                                                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+                                                    @click="showConfirm = true">
+                                                Accept
+                                            </button>
+                                            <div x-show="showConfirm" x-cloak
+                                                 class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                                                <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm space-y-4">
+                                                    <h2 class="text-lg font-semibold">Are you sure?</h2>
+                                                    <p>Do you want to accept this note?</p>
+                                                    <div class="flex justify-end gap-2">
+                                                        <button @click="showConfirm = false"
+                                                                class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+                                                        <button @click="$wire.acceptNote('{{ $note['id'] }}','{{ $note->latest_movement->id }}'); showConfirm = false"
+                                                                class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Yes, Accept</button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                @endif
-{{--                                {{ dd($note) }}--}}
-                                @if(!empty($note['is_forward_to_me']) && $note['is_forward_to_me'] == 'Yes')
-                                    <button type="button" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
-                                            wire:click="showForwardModalFun('{{ $note['id'] }}')">Forward</button>
+                                    @endif
+                                    {{--                                {{ dd($note) }}--}}
+                                    @if(!empty($note['is_forward_to_me']) && $note['is_forward_to_me'] == 'Yes')
+                                        <button type="button" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+                                                wire:click="showForwardModalFun('{{ $note['id'] }}')">Forward</button>
 
-                                    <div x-data="{ confirmClose: false, noteId: null }">
-                                        <!-- Close Button -->
-                                        <button
-                                                type="button"
-                                                @click="confirmClose = true; noteId = '{{ $note['id'] }}'"
-                                                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">
-                                            Close
-                                        </button>
+                                        <div x-data="{ confirmClose: false, noteId: null }">
+                                            <!-- Close Button -->
+                                            <button
+                                                    type="button"
+                                                    @click="confirmClose = true; noteId = '{{ $note['id'] }}'"
+                                                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">
+                                                Close
+                                            </button>
 
-                                        <!-- Confirmation Modal -->
-                                        <div x-show="confirmClose" x-cloak
-                                             class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                                            <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm space-y-4">
-                                                <h2 class="text-lg font-semibold">Are you sure?</h2>
-                                                <p>This action cannot be changed.</p>
-                                                <div class="flex justify-end gap-2">
-                                                    <button @click="confirmClose = false"
-                                                            class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
-                                                    <button @click="$wire.closeNoteModalFun(noteId); confirmClose = false"
-                                                            class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Yes, Close</button>
+                                            <!-- Confirmation Modal -->
+                                            <div x-show="confirmClose" x-cloak
+                                                 class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                                                <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm space-y-4">
+                                                    <h2 class="text-lg font-semibold">Are you sure?</h2>
+                                                    <p>This action cannot be changed.</p>
+                                                    <div class="flex justify-end gap-2">
+                                                        <button @click="confirmClose = false"
+                                                                class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+                                                        <button @click="$wire.closeNoteModalFun(noteId); confirmClose = false"
+                                                                class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Yes, Close</button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
 
 
-                                @endif
+                                    @endif
+                                </div>
                             </div>
-                        </div>
-                    @endforeach
-                @endif
+                        @endforeach
+                    @endif
+                </div>
+
             </div>
         </div>
     </div>
@@ -103,40 +106,42 @@
                             <h3 class="text-xl font-semibold text-gray-800">{{ $movementHistory->reference_no??NULL }}</h3>
                             <p class="text-sm text-gray-500">{{ $movementHistory->title??NULL }}</p>
                         </div>
-                        <div class="relative border-l-2 border-gray-300 pl-6 space-y-6">
-                            @foreach ($movementHistory->movementHistory as $index => $item)
-                                    <?php
-                                    $fromUserData       = !empty($item->from_user)? json_decode($item->from_user, true) : [];
-                                    $toUserData         = !empty($item->to_user)? json_decode($item->to_user, true) : [];
-                                    ?>
-                                <div class="relative">
-                                    <div class="absolute -left-3 top-1 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-semibold shadow-md">
-                                        {{ $index + 1 }}
-                                    </div>
-                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm">
-                                        <div class="flex justify-between items-center mb-1">
-                                            <div class="font-medium text-gray-800">{{ $item->status }}</div>
-                                            <div class="text-sm text-gray-500">{{ formatDate($item->created_at) }}</div>
+                        <div class="max-h-[400px] overflow-y-auto" >
+                            <div  class="relative border-l-2 border-gray-300 pl-6 space-y-6">
+                                @foreach ($movementHistory->movementHistory as $index => $item)
+                                        <?php
+                                        $fromUserData       = !empty($item->from_user)? json_decode($item->from_user, true) : [];
+                                        $toUserData         = !empty($item->to_user)? json_decode($item->to_user, true) : [];
+                                        ?>
+                                    <div class="relative">
+                                        <div class="absolute -left-3 top-1 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-semibold shadow-md">
+                                            {{ $index + 1 }}
                                         </div>
-                                        <div class="text-sm text-gray-600">
-                                            @if (!empty($fromUserData))
-                                                <span class="font-medium text-gray-700"> {{ $fromUserData['emp_name'] ?? '' }} ({{ $fromUserData['email'] ?? '' }}) </span> ({{ $fromUserData['designation_en']??NULL }})<br>
-                                            @endif
-                                            {{ $item['message']??NULL }}
-                                            @if (!empty($toUserData))
-                                                <div class="mt-1 text-blue-700">
-                                                    @if (empty($fromUserData))
-                                                        <strong>→ Created By: </strong> <span class="font-medium">
-                                                    @else
-                                                                <strong>→ Forwarded to: </strong> <span class="font-medium">
-                                                    @endif
-                                                                    {{ $toUserData['emp_name'] }}</span> ({{ $toUserData['email'] }})
-                                                </div>
-                                            @endif
+                                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm">
+                                            <div class="flex justify-between items-center mb-1">
+                                                <div class="font-medium text-gray-800">{{ $item->status }}</div>
+                                                <div class="text-sm text-gray-500">{{ formatDate($item->created_at) }}</div>
+                                            </div>
+                                            <div class="text-sm text-gray-600">
+                                                @if (!empty($fromUserData))
+                                                    <span class="font-medium text-gray-700"> {{ $fromUserData['emp_name'] ?? '' }} ({{ $fromUserData['email'] ?? '' }}) </span> ({{ $fromUserData['designation_en']??NULL }})<br>
+                                                @endif
+                                                {{ $item['message']??NULL }}
+                                                @if (!empty($toUserData))
+                                                    <div class="mt-1 text-blue-700">
+                                                        @if (empty($fromUserData))
+                                                            <strong>→ Created By: </strong> <span class="font-medium">
+                                                        @else
+                                                                    <strong>→ Forwarded to: </strong> <span class="font-medium">
+                                                        @endif
+                                                                        {{ $toUserData['emp_name'] }}</span> ({{ $toUserData['email'] }})
+                                                    </div>
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            @endforeach
+                                @endforeach
+                            </div>
                         </div>
                     @else
                         <p class="text-center text-gray-500 py-10">No movement history available for this note.</p>
@@ -177,71 +182,62 @@
                     <label for="forwardTo" class="block text-lg font-semibold text-gray-700 mb-4 text-center">
                         Forward To
                     </label>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-                        {{-- Office Selector --}}
-                        <div
-                                x-data="{ value: $wire.entangle('forwardToOfficeID') }"
-                                x-init="
-                                    let select = $el.querySelector('select');
-                                    $(select).select2().on('change', () => value = $(select).val());
-                                    $watch('value', val => $(select).val(val).trigger('change.select2'));
-                                "
-                                wire:ignore
-                        >
-                            <label for="officeID" class="block text-sm font-medium text-gray-700 mb-1">
-                                Office/Dept./Institute
-                            </label>
-                            <select
-                                    id="officeID"
-                                    wire:model.defer="forwardToOfficeID"
-                                    onchange="changedBodyInfo()"
-                                    class="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 Select2"
-                                    aria-label="Select Office"
-                            >
-                                <option value="">-- Choose an Office --</option>
-                                @foreach($bodyList as $key => $body)
-                                    <option value="{{ $key }}">{{ $body }}</option>
-                                @endforeach
-                            </select>
-                            @error('forwardToOfficeID')
-                                <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <!-- Employee Selector -->
-                        <div
-                                x-data="{ value: $wire.entangle('forwardToEmployee') }"
-                                x-init="
-                                        let select = $el.querySelector('select');
-                                        $(select).select2().on('change', () => value = $(select).val());
-                                        $watch('value', val => $(select).val(val).trigger('change.select2'));
-                                    "
-                                wire:ignore
-                        >
-                            <label for="forwardTo" class="block text-sm font-medium text-gray-700 mb-1">
-                                Employee Information
-                            </label>
-                            <select id="forwardTo" class="Select2 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm">
-                                <option value="">-- Choose a Person --</option>
-                                @foreach($employeeList as $employee)
-                                    <option value="{{ $employee['employee_id'] }}">
-                                        {{ $employee['emp_name'] }} ({{ $employee['emp_id'] }} - {{ $employee['designation_title'] }})
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('forwardToEmployee')
-                                <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                    </div>
                 </div>
 
+                <div class="mb-4"
+                        x-data="{ value: $wire.entangle('forwardToOfficeID') }"
+                        x-init="
+                            let select = $el.querySelector('select');
+                            $(select).select2().on('change', () => value = $(select).val());
+                            $watch('value', val => $(select).val(val).trigger('change.select2'));
+                        "
+                        wire:ignore
+                >
+                    <label for="officeID" class="block text-sm font-medium text-gray-700 mb-1">
+                        Office/Dept./Institute
+                    </label>
+                    <select
+                            id="officeID"
+                            wire:model.defer="forwardToOfficeID"
+                            onchange="changedBodyInfo()"
+                            class="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 Select2"
+                            aria-label="Select Office"
+                    >
+                        <option value="">-- Choose an Office --</option>
+                        @foreach($bodyList as $key => $body)
+                            <option value="{{ $key }}" {{ $forwardToOfficeID==$key?'selected':'' }}>{{ $body }}</option>
+                        @endforeach
+                    </select>
+                    @error('forwardToOfficeID')
+                        <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span>
+                    @enderror
+                </div>
 
-
-
+                <!-- Employee Selector -->
+                <div class="mb-4"
+                        x-data="{ value: $wire.entangle('forwardToEmployee') }"
+                        x-init="
+                                let select = $el.querySelector('select');
+                                $(select).select2().on('change', () => value = $(select).val());
+                                $watch('value', val => $(select).val(val).trigger('change.select2'));
+                            "
+                        wire:ignore
+                >
+                    <label for="forwardTo" class="block text-sm font-medium text-gray-700 mb-1">
+                        Employee Information
+                    </label>
+                    <select id="forwardTo" class="Select2 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm">
+                        <option value="">-- Choose a Person --</option>
+                        @foreach($employeeList as $employee)
+                            <option value="{{ $employee['employee_id'] }}">
+                                {{ $employee['emp_name'] }} ({{ $employee['emp_id'] }} - {{ $employee['designation_title'] }})
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('forwardToEmployee')
+                        <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span>
+                    @enderror
+                </div>
 
                 <div class="mb-4">
                     <label for="forwardMessage" class="block font-medium text-sm text-gray-700 mb-1">Message (Optional)</label>
